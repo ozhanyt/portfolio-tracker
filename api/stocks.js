@@ -1,4 +1,5 @@
-// Vercel Serverless Function: Stock Price Fetcher using Finnhub
+// Vercel Serverless Function: Hybrid Stock Price Fetcher
+// Finnhub for foreign stocks, Yahoo Finance for Turkish stocks
 // Endpoint: /api/stocks?symbols=THYAO.IS,GARAN.IS&foreign=false
 
 const FINNHUB_API_KEY = 'd4i6egpr01qkv40h4e4gd4i6egpr01qkv40h4e50';
@@ -7,8 +8,52 @@ const FINNHUB_API_KEY = 'd4i6egpr01qkv40h4e4gd4i6egpr01qkv40h4e50';
 const cache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+async function fetchFromFinnhub(symbol) {
+    const url = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        throw new Error(`Finnhub error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.c && data.pc) {
+        return {
+            currentPrice: data.c,
+            prevClose: data.pc
+        };
+    }
+    throw new Error('No data from Finnhub');
+}
+
+async function fetchFromYahoo(symbol) {
+    const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbol}`;
+    const response = await fetch(url, {
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'application/json',
+            'Referer': 'https://finance.yahoo.com/'
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(`Yahoo error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const quote = data.quoteResponse?.result?.[0];
+
+    if (quote && quote.regularMarketPrice) {
+        return {
+            currentPrice: quote.regularMarketPrice,
+            prevClose: quote.regularMarketPreviousClose
+        };
+    }
+    throw new Error('No data from Yahoo');
+}
+
 export default async function handler(req, res) {
-    // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
 
@@ -30,7 +75,6 @@ export default async function handler(req, res) {
     const isForeign = foreign === 'true';
 
     try {
-        // Check cache
         const cacheKey = `${symbols}-${isForeign}`;
         const cached = cache.get(cacheKey);
 
@@ -39,42 +83,31 @@ export default async function handler(req, res) {
             return res.status(200).json(cached.data);
         }
 
-        console.log('Cache MISS, fetching from Finnhub:', cacheKey);
+        console.log('Cache MISS, fetching:', cacheKey);
 
-        // Fetch each symbol individually (Finnhub doesn't support batch)
+        // Fetch each symbol
         const results = await Promise.all(
             symbolList.map(async (originalSymbol) => {
                 try {
-                    // For Turkish stocks, use .IS suffix; for foreign, use as-is
-                    const finnhubSymbol = isForeign
-                        ? originalSymbol
-                        : (originalSymbol.endsWith('.IS') ? originalSymbol : `${originalSymbol}.IS`);
+                    let priceData;
 
-                    const url = `https://finnhub.io/api/v1/quote?symbol=${finnhubSymbol}&token=${FINNHUB_API_KEY}`;
-                    const response = await fetch(url);
-
-                    if (!response.ok) {
-                        throw new Error(`Finnhub error: ${response.status}`);
-                    }
-
-                    const data = await response.json();
-
-                    // Finnhub returns: { c: current, pc: previous close, ... }
-                    if (data.c && data.pc) {
-                        return {
-                            code: originalSymbol,
-                            currentPrice: data.c,
-                            prevClose: data.pc,
-                            success: true
-                        };
+                    if (isForeign) {
+                        // Use Finnhub for foreign stocks
+                        priceData = await fetchFromFinnhub(originalSymbol);
                     } else {
-                        return {
-                            code: originalSymbol,
-                            success: false,
-                            error: 'No data from Finnhub'
-                        };
+                        // Use Yahoo for Turkish stocks
+                        const yahooSymbol = originalSymbol.endsWith('.IS') ? originalSymbol : `${originalSymbol}.IS`;
+                        priceData = await fetchFromYahoo(yahooSymbol);
                     }
+
+                    return {
+                        code: originalSymbol,
+                        currentPrice: priceData.currentPrice,
+                        prevClose: priceData.prevClose,
+                        success: true
+                    };
                 } catch (error) {
+                    console.error(`Error fetching ${originalSymbol}:`, error.message);
                     return {
                         code: originalSymbol,
                         success: false,
@@ -84,7 +117,6 @@ export default async function handler(req, res) {
             })
         );
 
-        // Cache the result
         cache.set(cacheKey, {
             timestamp: Date.now(),
             data: results

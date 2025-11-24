@@ -23,8 +23,8 @@ function getFundCode(symbol) {
     return symbol.substring(0, 3).toUpperCase()
 }
 
-// Persistent cache using localStorage
-const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+// Persistent cache using localStorage - AGGRESSIVE CACHE
+const CACHE_DURATION = 30 * 60 * 1000 // 30 minutes
 const CACHE_PREFIX = 'portfolio_cache_'
 
 function getCachedPrice(symbol) {

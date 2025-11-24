@@ -3,9 +3,9 @@
  * BIST100, USDTRY, XAUTRYG (Gold), BTCUSD
  */
 
-// Persistent cache for market data
+// Persistent cache for market data - AGGRESSIVE CACHE
 const CACHE_KEY = 'market_data_cache'
-const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+const CACHE_DURATION = 30 * 60 * 1000 // 30 minutes
 
 export async function fetchMarketData() {
     // Check cache first

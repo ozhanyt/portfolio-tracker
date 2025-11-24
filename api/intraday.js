@@ -1,7 +1,9 @@
-// Vercel Serverless Function: Intraday Chart Data Fetcher using yahoo-finance2
+// Vercel Serverless Function: Intraday Chart Data Fetcher using yahoo-finance2 v2
 // Endpoint: /api/intraday?symbol=THYAO.IS&foreign=false
 
-import yahooFinance from 'yahoo-finance2';
+import { YahooFinance } from 'yahoo-finance2';
+
+const yahooFinance = new YahooFinance();
 
 const cache = new Map();
 const CACHE_DURATION = 1 * 60 * 1000; // 1 minute (more frequent for charts)

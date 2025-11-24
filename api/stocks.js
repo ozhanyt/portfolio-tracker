@@ -1,7 +1,9 @@
-// Vercel Serverless Function: Stock Price Fetcher using yahoo-finance2
+// Vercel Serverless Function: Stock Price Fetcher using yahoo-finance2 v2
 // Endpoint: /api/stocks?symbols=THYAO.IS,GARAN.IS&foreign=false
 
-import yahooFinance from 'yahoo-finance2';
+import { YahooFinance } from 'yahoo-finance2';
+
+const yahooFinance = new YahooFinance();
 
 // In-memory cache
 const cache = new Map();

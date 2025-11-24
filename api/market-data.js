@@ -1,7 +1,9 @@
-// Vercel Serverless Function: Market Data Fetcher using yahoo-finance2
+// Vercel Serverless Function: Market Data Fetcher using yahoo-finance2 v2
 // Endpoint: /api/market-data
 
-import yahooFinance from 'yahoo-finance2';
+import { YahooFinance } from 'yahoo-finance2';
+
+const yahooFinance = new YahooFinance();
 
 const cache = { data: null, timestamp: 0 };
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes

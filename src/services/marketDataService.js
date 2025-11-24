@@ -22,14 +22,100 @@ export async function fetchMarketData() {
     }
 
     try {
-        const url = `/api/market-data`
+        const symbols = [
+            'XU100.IS',     // BIST100
+            'USDTRY=X',     // USD/TRY
+            'BTC-USD',      // Bitcoin
+            'GC=F',         // Gold Futures (per ounce)
+            'SI=F'          // Silver Futures (per ounce)
+        ]
+
+        const url = `/api/yahoo/v7/finance/quote?symbols=${symbols.join(',')}`
         const response = await fetch(url)
 
         if (!response.ok) {
             throw new Error(`API error: ${response.status}`)
         }
 
-        const results = await response.json()
+        const data = await response.json()
+        const quotes = data.quoteResponse?.result || []
+
+        const getQuote = (symbol) => quotes.find(q => q.symbol === symbol)
+
+        const results = []
+
+        // BIST100
+        const bist = getQuote('XU100.IS')
+        if (bist) {
+            results.push({
+                symbol: 'BIST100',
+                price: bist.regularMarketPrice,
+                change: bist.regularMarketChange,
+                changePercent: bist.regularMarketChangePercent
+            })
+        }
+
+        // USDTRY
+        const usd = getQuote('USDTRY=X')
+        if (usd) {
+            results.push({
+                symbol: 'USDTRY',
+                price: usd.regularMarketPrice,
+                change: usd.regularMarketChange,
+                changePercent: usd.regularMarketChangePercent
+            })
+        }
+
+        // BTCUSD
+        const btc = getQuote('BTC-USD')
+        if (btc) {
+            results.push({
+                symbol: 'BTCUSD',
+                price: btc.regularMarketPrice,
+                change: btc.regularMarketChange,
+                changePercent: btc.regularMarketChangePercent
+            })
+        }
+
+        // Precious Metals Calculation (TRY per gram)
+        if (usd) {
+            const usdPrice = usd.regularMarketPrice
+            const usdPrev = usd.regularMarketPreviousClose
+
+            // Gold (XAUTRYG)
+            const gold = getQuote('GC=F')
+            if (gold) {
+                const goldPerGram = gold.regularMarketPrice / 31.1
+                const goldTRY = goldPerGram * usdPrice
+
+                const prevGoldPerGram = gold.regularMarketPreviousClose / 31.1
+                const prevGoldTRY = prevGoldPerGram * usdPrev
+
+                results.push({
+                    symbol: 'XAUTRYG',
+                    price: goldTRY,
+                    change: goldTRY - prevGoldTRY,
+                    changePercent: ((goldTRY - prevGoldTRY) / prevGoldTRY) * 100
+                })
+            }
+
+            // Silver (XAGTRYG)
+            const silver = getQuote('SI=F')
+            if (silver) {
+                const silverPerGram = silver.regularMarketPrice / 31.1
+                const silverTRY = silverPerGram * usdPrice
+
+                const prevSilverPerGram = silver.regularMarketPreviousClose / 31.1
+                const prevSilverTRY = prevSilverPerGram * usdPrev
+
+                results.push({
+                    symbol: 'XAGTRYG',
+                    price: silverTRY,
+                    change: silverTRY - prevSilverTRY,
+                    changePercent: ((silverTRY - prevSilverTRY) / prevSilverTRY) * 100
+                })
+            }
+        }
 
         // Save to cache
         if (results.length > 0) {

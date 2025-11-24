@@ -298,7 +298,7 @@ export async function fetchStockPrices(symbols, options = {}) {
             )
 
             const symbolsParam = yahooSymbols.join(',')
-            const url = `/api/stocks?symbols=${symbolsParam}&foreign=${options.isForeign || false}`
+            const url = `/api/yahoo/v7/finance/quote?symbols=${symbolsParam}`
 
             const response = await fetch(url)
 
@@ -396,13 +396,33 @@ export async function fetchIntradayHistory(symbol, options = {}) {
     }
 
     try {
-        const url = `/api/intraday?symbol=${encodeURIComponent(symbol)}&foreign=${options.isForeign || false}`
+        const yahooSymbol = options.isForeign ? symbol : (symbol.endsWith('.IS') ? symbol : `${symbol}.IS`)
+        const range = options.isForeign ? '5d' : '1d'
+        const url = `/api/yahoo/v8/finance/chart/${yahooSymbol}?interval=5m&range=${range}`
 
         const response = await fetch(url)
         if (!response.ok) throw new Error(`API error: ${response.status}`)
 
-        const result = await response.json()
-        return result
+        const data = await response.json()
+        const result = data.chart.result[0]
+
+        if (!result) {
+            return { symbol, data: [] }
+        }
+
+        const timestamps = result.timestamp
+        const closes = result.indicators.quote[0].close
+
+        const history = timestamps.map((t, i) => ({
+            timestamp: t * 1000,
+            price: closes[i]
+        })).filter(item => item.price != null)
+
+        return {
+            symbol,
+            prevClose: result.meta.chartPreviousClose,
+            data: history
+        }
     } catch (error) {
         console.error(`Error fetching history for ${symbol}:`, error)
         return { symbol, data: [] }

@@ -1,57 +1,11 @@
-// Vercel Serverless Function: Hybrid Stock Price Fetcher
-// Finnhub for foreign stocks, Yahoo Finance for Turkish stocks
+// Vercel Serverless Function: Stock Price Fetcher using Twelve Data
 // Endpoint: /api/stocks?symbols=THYAO.IS,GARAN.IS&foreign=false
 
-const FINNHUB_API_KEY = 'd4i6egpr01qkv40h4e4gd4i6egpr01qkv40h4e50';
+const TWELVE_DATA_API_KEY = 'ea33416ef7404879958f1fc4e3d3a389';
 
 // In-memory cache
 const cache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-async function fetchFromFinnhub(symbol) {
-    const url = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`;
-    const response = await fetch(url);
-
-    if (!response.ok) {
-        throw new Error(`Finnhub error: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.c && data.pc) {
-        return {
-            currentPrice: data.c,
-            prevClose: data.pc
-        };
-    }
-    throw new Error('No data from Finnhub');
-}
-
-async function fetchFromYahoo(symbol) {
-    const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbol}`;
-    const response = await fetch(url, {
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Accept': 'application/json',
-            'Referer': 'https://finance.yahoo.com/'
-        }
-    });
-
-    if (!response.ok) {
-        throw new Error(`Yahoo error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const quote = data.quoteResponse?.result?.[0];
-
-    if (quote && quote.regularMarketPrice) {
-        return {
-            currentPrice: quote.regularMarketPrice,
-            prevClose: quote.regularMarketPreviousClose
-        };
-    }
-    throw new Error('No data from Yahoo');
-}
 
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -83,29 +37,37 @@ export default async function handler(req, res) {
             return res.status(200).json(cached.data);
         }
 
-        console.log('Cache MISS, fetching:', cacheKey);
+        console.log('Cache MISS, fetching from Twelve Data:', cacheKey);
 
-        // Fetch each symbol
+        // Fetch each symbol (Twelve Data supports batch but with different format)
         const results = await Promise.all(
             symbolList.map(async (originalSymbol) => {
                 try {
-                    let priceData;
+                    // For Turkish stocks, keep .IS suffix
+                    const symbol = isForeign ? originalSymbol : (originalSymbol.endsWith('.IS') ? originalSymbol : `${originalSymbol}.IS`);
 
-                    if (isForeign) {
-                        // Use Finnhub for foreign stocks
-                        priceData = await fetchFromFinnhub(originalSymbol);
-                    } else {
-                        // Use Yahoo for Turkish stocks
-                        const yahooSymbol = originalSymbol.endsWith('.IS') ? originalSymbol : `${originalSymbol}.IS`;
-                        priceData = await fetchFromYahoo(yahooSymbol);
+                    const url = `https://api.twelvedata.com/quote?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`;
+                    const response = await fetch(url);
+
+                    if (!response.ok) {
+                        throw new Error(`Twelve Data error: ${response.status}`);
                     }
 
-                    return {
-                        code: originalSymbol,
-                        currentPrice: priceData.currentPrice,
-                        prevClose: priceData.prevClose,
-                        success: true
-                    };
+                    const data = await response.json();
+
+                    // Twelve Data returns: { close, previous_close, ... }
+                    if (data.close && data.previous_close) {
+                        return {
+                            code: originalSymbol,
+                            currentPrice: parseFloat(data.close),
+                            prevClose: parseFloat(data.previous_close),
+                            success: true
+                        };
+                    } else if (data.status === 'error') {
+                        throw new Error(data.message || 'API error');
+                    } else {
+                        throw new Error('No data from Twelve Data');
+                    }
                 } catch (error) {
                     console.error(`Error fetching ${originalSymbol}:`, error.message);
                     return {

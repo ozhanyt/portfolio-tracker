@@ -1,7 +1,7 @@
-// Vercel Serverless Function: Intraday Chart Data Fetcher using Finnhub
+// Vercel Serverless Function: Intraday Chart Data Fetcher using Twelve Data
 // Endpoint: /api/intraday?symbol=THYAO.IS&foreign=false
 
-const FINNHUB_API_KEY = 'd4i6egpr01qkv40h4e4gd4i6egpr01qkv40h4e50';
+const TWELVE_DATA_API_KEY = 'ea33416ef7404879958f1fc4e3d3a389';
 
 const cache = new Map();
 const CACHE_DURATION = 1 * 60 * 1000; // 1 minute
@@ -27,7 +27,6 @@ export default async function handler(req, res) {
     const isForeign = foreign === 'true';
 
     try {
-        // Check cache
         const cacheKey = `${symbol}-${isForeign}`;
         const cached = cache.get(cacheKey);
 
@@ -36,25 +35,26 @@ export default async function handler(req, res) {
             return res.status(200).json(cached.data);
         }
 
-        console.log('Intraday cache MISS, fetching from Finnhub:', cacheKey);
+        console.log('Intraday cache MISS, fetching from Twelve Data:', cacheKey);
 
-        const finnhubSymbol = isForeign ? symbol : (symbol.endsWith('.IS') ? symbol : `${symbol}.IS`);
+        const twelveSymbol = isForeign ? symbol : (symbol.endsWith('.IS') ? symbol : `${symbol}.IS`);
 
-        // Calculate timestamps
-        const to = Math.floor(Date.now() / 1000);
-        const from = to - (isForeign ? 5 * 24 * 60 * 60 : 24 * 60 * 60); // 5 days for foreign, 1 day for local
-
-        const url = `https://finnhub.io/api/v1/stock/candle?symbol=${finnhubSymbol}&resolution=5&from=${from}&to=${to}&token=${FINNHUB_API_KEY}`;
+        // Twelve Data: 5min interval, outputsize for intraday data
+        const url = `https://api.twelvedata.com/time_series?symbol=${twelveSymbol}&interval=5min&outputsize=78&apikey=${TWELVE_DATA_API_KEY}`;
 
         const response = await fetch(url);
 
         if (!response.ok) {
-            throw new Error(`Finnhub error: ${response.status}`);
+            throw new Error(`Twelve Data error: ${response.status}`);
         }
 
         const data = await response.json();
 
-        if (data.s !== 'ok' || !data.t || !data.c) {
+        if (data.status === 'error') {
+            throw new Error(data.message || 'API error');
+        }
+
+        if (!data.values || data.values.length === 0) {
             return res.status(200).json({
                 symbol,
                 prevClose: null,
@@ -62,14 +62,19 @@ export default async function handler(req, res) {
             });
         }
 
-        // Map to our format
-        const history = data.t.map((timestamp, i) => ({
-            timestamp: timestamp * 1000, // Convert to ms
-            price: data.c[i]
-        })).filter(item => item.price != null);
+        // Map to our format (Twelve Data returns newest first, reverse it)
+        const history = data.values
+            .reverse()
+            .map(item => ({
+                timestamp: new Date(item.datetime).getTime(),
+                price: parseFloat(item.close)
+            }))
+            .filter(item => item.price && !isNaN(item.price));
 
-        // Get previous close from first data point
-        const prevClose = history.length > 0 ? history[0].price : null;
+        // Get previous close from meta or first data point
+        const prevClose = data.meta?.previous_close
+            ? parseFloat(data.meta.previous_close)
+            : (history.length > 0 ? history[0].price : null);
 
         const responseData = {
             symbol,
@@ -77,7 +82,6 @@ export default async function handler(req, res) {
             data: history
         };
 
-        // Cache the result
         cache.set(cacheKey, {
             timestamp: Date.now(),
             data: responseData
@@ -88,7 +92,6 @@ export default async function handler(req, res) {
     } catch (error) {
         console.error('Error fetching intraday data:', error);
 
-        // Try to return stale cache
         const cacheKey = `${symbol}-${isForeign}`;
         const stale = cache.get(cacheKey);
         if (stale) {

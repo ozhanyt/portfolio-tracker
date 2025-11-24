@@ -1,5 +1,8 @@
-// Vercel Serverless Function: Intraday Chart Data Fetcher
+// Vercel Serverless Function: Intraday Chart Data Fetcher using RapidAPI Yahoo Finance
 // Endpoint: /api/intraday?symbol=THYAO.IS&foreign=false
+
+const RAPIDAPI_KEY = '0ed88c247cmshb4b5e9496b12b97p1d471bjsnfc89f4b69f23';
+const RAPIDAPI_HOST = 'yahoo-finance15.p.rapidapi.com';
 
 const cache = new Map();
 const CACHE_DURATION = 1 * 60 * 1000; // 1 minute (more frequent for charts)
@@ -34,28 +37,25 @@ export default async function handler(req, res) {
             return res.status(200).json(cached.data);
         }
 
-        console.log('Intraday cache MISS, fetching from Yahoo:', cacheKey);
+        console.log('Intraday cache MISS, fetching from RapidAPI:', cacheKey);
 
         const yahooSymbol = isForeign ? symbol : (symbol.endsWith('.IS') ? symbol : `${symbol}.IS`);
         const range = isForeign ? '5d' : '1d';
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=5m&range=${range}`;
+        const url = `https://${RAPIDAPI_HOST}/api/yahoo/ch/chart/${yahooSymbol}?interval=5m&range=${range}`;
 
         const response = await fetch(url, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'application/json',
-                'Accept-Language': 'en-US,en;q=0.9',
-                'Referer': 'https://finance.yahoo.com/',
-                'Origin': 'https://finance.yahoo.com'
+                'X-RapidAPI-Key': RAPIDAPI_KEY,
+                'X-RapidAPI-Host': RAPIDAPI_HOST
             }
         });
 
         if (!response.ok) {
-            throw new Error(`Yahoo API error: ${response.status}`);
+            throw new Error(`RapidAPI error: ${response.status}`);
         }
 
         const data = await response.json();
-        const result = data.chart.result[0];
+        const result = data.chart?.result?.[0];
 
         if (!result?.timestamp || !result?.indicators?.quote?.[0]?.close) {
             return res.status(200).json({
@@ -78,7 +78,7 @@ export default async function handler(req, res) {
 
         const responseData = {
             symbol,
-            prevClose: result.meta.chartPreviousClose,
+            prevClose: result.meta?.chartPreviousClose,
             data: history
         };
 

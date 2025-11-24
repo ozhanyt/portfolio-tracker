@@ -1,5 +1,7 @@
-// Vercel Serverless Function: Market Data Fetcher
+// Vercel Serverless Function: Market Data Fetcher using yahoo-finance2
 // Endpoint: /api/market-data
+
+import yahooFinance from 'yahoo-finance2';
 
 const cache = { data: null, timestamp: 0 };
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -33,21 +35,10 @@ export default async function handler(req, res) {
             'SI=F'          // Silver Futures
         ];
 
-        const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols.join(',')}`;
-        const response = await fetch(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-            }
-        });
+        const quotes = await yahooFinance.quote(symbols);
+        const quotesArray = Array.isArray(quotes) ? quotes : [quotes];
 
-        if (!response.ok) {
-            throw new Error(`Yahoo API error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const quotes = data.quoteResponse?.result || [];
-
-        const getQuote = (symbol) => quotes.find(q => q.symbol === symbol);
+        const getQuote = (symbol) => quotesArray.find(q => q.symbol === symbol);
 
         const results = [];
 

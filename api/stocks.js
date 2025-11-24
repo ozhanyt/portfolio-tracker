@@ -1,7 +1,9 @@
-// Vercel Serverless Function: Stock Price Fetcher
+// Vercel Serverless Function: Stock Price Fetcher using yahoo-finance2
 // Endpoint: /api/stocks?symbols=THYAO.IS,GARAN.IS&foreign=false
 
-// In-memory cache (survives across invocations for ~5 minutes on Vercel)
+import yahooFinance from 'yahoo-finance2';
+
+// In-memory cache
 const cache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
@@ -44,28 +46,15 @@ export default async function handler(req, res) {
             isForeign ? s : (s.endsWith('.IS') ? s : `${s}.IS`)
         );
 
-        const symbolsParam = yahooSymbols.join(',');
-        const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbolsParam}`;
-
-        const response = await fetch(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`Yahoo API error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const quotes = data.quoteResponse?.result || [];
+        // Use yahoo-finance2 quote endpoint
+        const quotes = await yahooFinance.quote(yahooSymbols);
 
         // Map to our format
         const results = symbolList.map(originalSymbol => {
             const yahooSymbol = isForeign ? originalSymbol : (originalSymbol.endsWith('.IS') ? originalSymbol : `${originalSymbol}.IS`);
-            const quote = quotes.find(q => q.symbol === yahooSymbol);
+            const quote = Array.isArray(quotes) ? quotes.find(q => q.symbol === yahooSymbol) : (quotes.symbol === yahooSymbol ? quotes : null);
 
-            if (quote) {
+            if (quote && quote.regularMarketPrice) {
                 return {
                     code: originalSymbol,
                     currentPrice: quote.regularMarketPrice,

@@ -1,5 +1,7 @@
-// Vercel Serverless Function: Intraday Chart Data Fetcher
+// Vercel Serverless Function: Intraday Chart Data Fetcher using yahoo-finance2
 // Endpoint: /api/intraday?symbol=THYAO.IS&foreign=false
+
+import yahooFinance from 'yahoo-finance2';
 
 const cache = new Map();
 const CACHE_DURATION = 1 * 60 * 1000; // 1 minute (more frequent for charts)
@@ -37,23 +39,21 @@ export default async function handler(req, res) {
         console.log('Intraday cache MISS, fetching from Yahoo:', cacheKey);
 
         const yahooSymbol = isForeign ? symbol : (symbol.endsWith('.IS') ? symbol : `${symbol}.IS`);
-        const range = isForeign ? '5d' : '1d';
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=5m&range=${range}`;
 
-        const response = await fetch(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`Yahoo API error: ${response.status}`);
+        // Calculate period for yahoo-finance2
+        const period1 = new Date();
+        if (isForeign) {
+            period1.setDate(period1.getDate() - 5); // 5 days for foreign
+        } else {
+            period1.setHours(0, 0, 0, 0); // Start of today for local
         }
 
-        const data = await response.json();
-        const result = data.chart.result[0];
+        const result = await yahooFinance.chart(yahooSymbol, {
+            period1,
+            interval: '5m'
+        });
 
-        if (!result?.timestamp || !result?.indicators?.quote?.[0]?.close) {
+        if (!result?.quotes || result.quotes.length === 0) {
             return res.status(200).json({
                 symbol,
                 prevClose: null,
@@ -61,20 +61,17 @@ export default async function handler(req, res) {
             });
         }
 
-        const timestamps = result.timestamp;
-        const closes = result.indicators.quote[0].close;
-
-        // Map to clean format, filtering out nulls
-        const history = timestamps
-            .map((t, i) => ({
-                timestamp: t * 1000, // Convert to ms
-                price: closes[i]
-            }))
-            .filter(item => item.price != null);
+        // Map to our format
+        const history = result.quotes
+            .filter(q => q.close != null)
+            .map(q => ({
+                timestamp: q.date.getTime(),
+                price: q.close
+            }));
 
         const responseData = {
             symbol,
-            prevClose: result.meta.chartPreviousClose,
+            prevClose: result.meta?.previousClose || result.meta?.chartPreviousClose || null,
             data: history
         };
 
@@ -97,9 +94,10 @@ export default async function handler(req, res) {
             return res.status(200).json(stale.data);
         }
 
-        return res.status(500).json({
-            error: 'Failed to fetch intraday data',
-            message: error.message
+        return res.status(200).json({
+            symbol,
+            prevClose: null,
+            data: []
         });
     }
 }

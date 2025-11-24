@@ -1,8 +1,7 @@
-// Vercel Serverless Function: Market Data Fetcher using RapidAPI Yahoo Finance
+// Vercel Serverless Function: Market Data Fetcher using Finnhub
 // Endpoint: /api/market-data
 
-const RAPIDAPI_KEY = '0ed88c247cmshb4b5e9496b12b97p1d471bjsnfc89f4b69f23';
-const RAPIDAPI_HOST = 'yahoo-finance15.p.rapidapi.com';
+const FINNHUB_API_KEY = 'd4i6egpr01qkv40h4e4gd4i6egpr01qkv40h4e50';
 
 const cache = { data: null, timestamp: 0 };
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -26,73 +25,91 @@ export default async function handler(req, res) {
             return res.status(200).json(cache.data);
         }
 
-        console.log('Market data cache MISS, fetching from RapidAPI');
+        console.log('Market data cache MISS, fetching from Finnhub');
 
         const symbols = [
-            'XU100.IS',     // BIST100
-            'USDTRY=X',     // USD/TRY
-            'BTC-USD',      // Bitcoin
-            'GC=F',         // Gold Futures
-            'SI=F'          // Silver Futures
+            { symbol: 'XU100.IS', key: 'BIST100' },
+            { symbol: 'USDTRY=X', key: 'USDTRY' },
+            { symbol: 'BTC-USD', key: 'BTCUSD' },
+            { symbol: 'GC=F', key: 'GOLD' },
+            { symbol: 'SI=F', key: 'SILVER' }
         ];
 
-        const symbolsParam = symbols.join(',');
-        const url = `https://${RAPIDAPI_HOST}/api/yahoo/qu/quote/v7/get?symbols=${symbolsParam}`;
+        const quotes = await Promise.all(
+            symbols.map(async ({ symbol, key }) => {
+                try {
+                    const url = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`;
+                    const response = await fetch(url);
 
-        const response = await fetch(url, {
-            headers: {
-                'X-RapidAPI-Key': RAPIDAPI_KEY,
-                'X-RapidAPI-Host': RAPIDAPI_HOST
-            }
-        });
+                    if (!response.ok) return null;
 
-        if (!response.ok) {
-            throw new Error(`RapidAPI error: ${response.status}`);
-        }
+                    const data = await response.json();
 
-        const data = await response.json();
-        const quotes = data.quoteResponse?.result || [];
-
-        const getQuote = (symbol) => quotes.find(q => q.symbol === symbol);
+                    if (data.c && data.pc) {
+                        return {
+                            key,
+                            data,
+                            price: data.c,
+                            prevClose: data.pc
+                        };
+                    }
+                    return null;
+                } catch (error) {
+                    console.error(`Error fetching ${symbol}:`, error);
+                    return null;
+                }
+            })
+        );
 
         const results = [];
 
-        // Helper to format result
-        const formatResult = (key, quote) => {
-            if (!quote) return null;
-            return {
-                symbol: key,
-                price: quote.regularMarketPrice,
-                change: quote.regularMarketChange,
-                changePercent: quote.regularMarketChangePercent,
-                success: true
-            };
-        };
-
         // BIST100
-        const bist = getQuote('XU100.IS');
-        if (bist) results.push(formatResult('BIST100', bist));
+        const bist = quotes.find(q => q?.key === 'BIST100');
+        if (bist) {
+            results.push({
+                symbol: 'BIST100',
+                price: bist.price,
+                change: bist.price - bist.prevClose,
+                changePercent: ((bist.price - bist.prevClose) / bist.prevClose) * 100,
+                success: true
+            });
+        }
 
         // USDTRY
-        const usd = getQuote('USDTRY=X');
-        if (usd) results.push(formatResult('USDTRY', usd));
+        const usd = quotes.find(q => q?.key === 'USDTRY');
+        if (usd) {
+            results.push({
+                symbol: 'USDTRY',
+                price: usd.price,
+                change: usd.price - usd.prevClose,
+                changePercent: ((usd.price - usd.prevClose) / usd.prevClose) * 100,
+                success: true
+            });
+        }
 
         // BTCUSD
-        const btc = getQuote('BTC-USD');
-        if (btc) results.push(formatResult('BTCUSD', btc));
+        const btc = quotes.find(q => q?.key === 'BTCUSD');
+        if (btc) {
+            results.push({
+                symbol: 'BTCUSD',
+                price: btc.price,
+                change: btc.price - btc.prevClose,
+                changePercent: ((btc.price - btc.prevClose) / btc.prevClose) * 100,
+                success: true
+            });
+        }
 
         // Precious Metals Calculation
         if (usd) {
-            const usdPrice = usd.regularMarketPrice;
-            const usdPrev = usd.regularMarketPreviousClose;
+            const usdPrice = usd.price;
+            const usdPrev = usd.prevClose;
 
-            // Gold (XAUTRYG)
-            const gold = getQuote('GC=F');
+            const gold = quotes.find(q => q?.key === 'GOLD');
             if (gold) {
-                const goldPerGram = gold.regularMarketPrice / 31.1;
+                const goldPerGram = gold.price / 31.1;
                 const goldTRY = goldPerGram * usdPrice;
 
-                const prevGoldPerGram = gold.regularMarketPreviousClose / 31.1;
+                const prevGoldPerGram = gold.prevClose / 31.1;
                 const prevGoldTRY = prevGoldPerGram * usdPrev;
 
                 results.push({
@@ -104,13 +121,12 @@ export default async function handler(req, res) {
                 });
             }
 
-            // Silver (XAGTRYG)
-            const silver = getQuote('SI=F');
+            const silver = quotes.find(q => q?.key === 'SILVER');
             if (silver) {
-                const silverPerGram = silver.regularMarketPrice / 31.1;
+                const silverPerGram = silver.price / 31.1;
                 const silverTRY = silverPerGram * usdPrice;
 
-                const prevSilverPerGram = silver.regularMarketPreviousClose / 31.1;
+                const prevSilverPerGram = silver.prevClose / 31.1;
                 const prevSilverTRY = prevSilverPerGram * usdPrev;
 
                 results.push({

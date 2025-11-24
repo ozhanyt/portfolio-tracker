@@ -1,11 +1,10 @@
-// Vercel Serverless Function: Intraday Chart Data Fetcher using RapidAPI Yahoo Finance
+// Vercel Serverless Function: Intraday Chart Data Fetcher using Finnhub
 // Endpoint: /api/intraday?symbol=THYAO.IS&foreign=false
 
-const RAPIDAPI_KEY = '0ed88c247cmshb4b5e9496b12b97p1d471bjsnfc89f4b69f23';
-const RAPIDAPI_HOST = 'yahoo-finance15.p.rapidapi.com';
+const FINNHUB_API_KEY = 'd4i6egpr01qkv40h4e4gd4i6egpr01qkv40h4e50';
 
 const cache = new Map();
-const CACHE_DURATION = 1 * 60 * 1000; // 1 minute (more frequent for charts)
+const CACHE_DURATION = 1 * 60 * 1000; // 1 minute
 
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -37,27 +36,25 @@ export default async function handler(req, res) {
             return res.status(200).json(cached.data);
         }
 
-        console.log('Intraday cache MISS, fetching from RapidAPI:', cacheKey);
+        console.log('Intraday cache MISS, fetching from Finnhub:', cacheKey);
 
-        const yahooSymbol = isForeign ? symbol : (symbol.endsWith('.IS') ? symbol : `${symbol}.IS`);
-        const range = isForeign ? '5d' : '1d';
-        const url = `https://${RAPIDAPI_HOST}/api/yahoo/ch/chart/${yahooSymbol}?interval=5m&range=${range}`;
+        const finnhubSymbol = isForeign ? symbol : (symbol.endsWith('.IS') ? symbol : `${symbol}.IS`);
 
-        const response = await fetch(url, {
-            headers: {
-                'X-RapidAPI-Key': RAPIDAPI_KEY,
-                'X-RapidAPI-Host': RAPIDAPI_HOST
-            }
-        });
+        // Calculate timestamps
+        const to = Math.floor(Date.now() / 1000);
+        const from = to - (isForeign ? 5 * 24 * 60 * 60 : 24 * 60 * 60); // 5 days for foreign, 1 day for local
+
+        const url = `https://finnhub.io/api/v1/stock/candle?symbol=${finnhubSymbol}&resolution=5&from=${from}&to=${to}&token=${FINNHUB_API_KEY}`;
+
+        const response = await fetch(url);
 
         if (!response.ok) {
-            throw new Error(`RapidAPI error: ${response.status}`);
+            throw new Error(`Finnhub error: ${response.status}`);
         }
 
         const data = await response.json();
-        const result = data.chart?.result?.[0];
 
-        if (!result?.timestamp || !result?.indicators?.quote?.[0]?.close) {
+        if (data.s !== 'ok' || !data.t || !data.c) {
             return res.status(200).json({
                 symbol,
                 prevClose: null,
@@ -65,20 +62,18 @@ export default async function handler(req, res) {
             });
         }
 
-        const timestamps = result.timestamp;
-        const closes = result.indicators.quote[0].close;
+        // Map to our format
+        const history = data.t.map((timestamp, i) => ({
+            timestamp: timestamp * 1000, // Convert to ms
+            price: data.c[i]
+        })).filter(item => item.price != null);
 
-        // Map to clean format, filtering out nulls
-        const history = timestamps
-            .map((t, i) => ({
-                timestamp: t * 1000, // Convert to ms
-                price: closes[i]
-            }))
-            .filter(item => item.price != null);
+        // Get previous close from first data point
+        const prevClose = history.length > 0 ? history[0].price : null;
 
         const responseData = {
             symbol,
-            prevClose: result.meta?.chartPreviousClose,
+            prevClose,
             data: history
         };
 

@@ -1,8 +1,7 @@
-// Vercel Serverless Function: Stock Price Fetcher using RapidAPI Yahoo Finance
+// Vercel Serverless Function: Stock Price Fetcher using Finnhub
 // Endpoint: /api/stocks?symbols=THYAO.IS,GARAN.IS&foreign=false
 
-const RAPIDAPI_KEY = '0ed88c247cmshb4b5e9496b12b97p1d471bjsnfc89f4b69f23';
-const RAPIDAPI_HOST = 'yahoo-finance15.p.rapidapi.com';
+const FINNHUB_API_KEY = 'd4i6egpr01qkv40h4e4gd4i6egpr01qkv40h4e50';
 
 // In-memory cache
 const cache = new Map();
@@ -40,50 +39,50 @@ export default async function handler(req, res) {
             return res.status(200).json(cached.data);
         }
 
-        console.log('Cache MISS, fetching from RapidAPI:', cacheKey);
+        console.log('Cache MISS, fetching from Finnhub:', cacheKey);
 
-        // Prepare Yahoo symbols
-        const yahooSymbols = symbolList.map(s =>
-            isForeign ? s : (s.endsWith('.IS') ? s : `${s}.IS`)
+        // Fetch each symbol individually (Finnhub doesn't support batch)
+        const results = await Promise.all(
+            symbolList.map(async (originalSymbol) => {
+                try {
+                    // For Turkish stocks, use .IS suffix; for foreign, use as-is
+                    const finnhubSymbol = isForeign
+                        ? originalSymbol
+                        : (originalSymbol.endsWith('.IS') ? originalSymbol : `${originalSymbol}.IS`);
+
+                    const url = `https://finnhub.io/api/v1/quote?symbol=${finnhubSymbol}&token=${FINNHUB_API_KEY}`;
+                    const response = await fetch(url);
+
+                    if (!response.ok) {
+                        throw new Error(`Finnhub error: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    // Finnhub returns: { c: current, pc: previous close, ... }
+                    if (data.c && data.pc) {
+                        return {
+                            code: originalSymbol,
+                            currentPrice: data.c,
+                            prevClose: data.pc,
+                            success: true
+                        };
+                    } else {
+                        return {
+                            code: originalSymbol,
+                            success: false,
+                            error: 'No data from Finnhub'
+                        };
+                    }
+                } catch (error) {
+                    return {
+                        code: originalSymbol,
+                        success: false,
+                        error: error.message
+                    };
+                }
+            })
         );
-
-        const symbolsParam = yahooSymbols.join(',');
-        const url = `https://${RAPIDAPI_HOST}/api/yahoo/qu/quote/v7/get?symbols=${symbolsParam}`;
-
-        const response = await fetch(url, {
-            headers: {
-                'X-RapidAPI-Key': RAPIDAPI_KEY,
-                'X-RapidAPI-Host': RAPIDAPI_HOST
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`RapidAPI error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const quotes = data.quoteResponse?.result || [];
-
-        // Map to our format
-        const results = symbolList.map(originalSymbol => {
-            const yahooSymbol = isForeign ? originalSymbol : (originalSymbol.endsWith('.IS') ? originalSymbol : `${originalSymbol}.IS`);
-            const quote = quotes.find(q => q.symbol === yahooSymbol);
-
-            if (quote) {
-                return {
-                    code: originalSymbol,
-                    currentPrice: quote.regularMarketPrice,
-                    prevClose: quote.regularMarketPreviousClose,
-                    success: true
-                };
-            } else {
-                return {
-                    code: originalSymbol,
-                    success: false,
-                    error: 'Not found in response'
-                };
-            }
-        });
 
         // Cache the result
         cache.set(cacheKey, {

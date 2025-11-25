@@ -1,11 +1,11 @@
 /**
- * Market data service for fetching market indicators from serverless backend
+ * Market data service for fetching market indicators via Google Apps Script proxy
  * BIST100, USDTRY, XAUTRYG (Gold), BTCUSD
  */
 
-// Persistent cache for market data - AGGRESSIVE CACHE
+// Persistent cache for market data
 const CACHE_KEY = 'market_data_cache'
-const CACHE_DURATION = 30 * 60 * 1000 // 30 minutes
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes (via Google Apps Script)
 
 export async function fetchMarketData() {
     // Check cache first
@@ -30,7 +30,8 @@ export async function fetchMarketData() {
             'SI=F'          // Silver Futures (per ounce)
         ]
 
-        const url = `/api/yahoo/v7/finance/quote?symbols=${symbols.join(',')}`
+        // Google Apps Script Proxy URL
+        const url = `https://script.google.com/macros/s/AKfycbwbXQQVniEt-pGbhgCTMTrrnDOnx9Irx6H92wenanMyyw4GfWWn8Dxr23oRHUtDyEQq/exec?symbols=${symbols.join(',')}`
         const response = await fetch(url)
 
         if (!response.ok) {
@@ -38,9 +39,8 @@ export async function fetchMarketData() {
         }
 
         const data = await response.json()
-        const quotes = data.quoteResponse?.result || []
 
-        const getQuote = (symbol) => quotes.find(q => q.symbol === symbol)
+        const getQuote = (symbol) => data.find(q => q.code === symbol && q.success)
 
         const results = []
 
@@ -49,9 +49,9 @@ export async function fetchMarketData() {
         if (bist) {
             results.push({
                 symbol: 'BIST100',
-                price: bist.regularMarketPrice,
-                change: bist.regularMarketChange,
-                changePercent: bist.regularMarketChangePercent
+                price: bist.currentPrice,
+                change: bist.currentPrice - bist.prevClose,
+                changePercent: ((bist.currentPrice - bist.prevClose) / bist.prevClose) * 100
             })
         }
 
@@ -60,9 +60,9 @@ export async function fetchMarketData() {
         if (usd) {
             results.push({
                 symbol: 'USDTRY',
-                price: usd.regularMarketPrice,
-                change: usd.regularMarketChange,
-                changePercent: usd.regularMarketChangePercent
+                price: usd.currentPrice,
+                change: usd.currentPrice - usd.prevClose,
+                changePercent: ((usd.currentPrice - usd.prevClose) / usd.prevClose) * 100
             })
         }
 
@@ -71,24 +71,24 @@ export async function fetchMarketData() {
         if (btc) {
             results.push({
                 symbol: 'BTCUSD',
-                price: btc.regularMarketPrice,
-                change: btc.regularMarketChange,
-                changePercent: btc.regularMarketChangePercent
+                price: btc.currentPrice,
+                change: btc.currentPrice - btc.prevClose,
+                changePercent: ((btc.currentPrice - btc.prevClose) / btc.prevClose) * 100
             })
         }
 
         // Precious Metals Calculation (TRY per gram)
         if (usd) {
-            const usdPrice = usd.regularMarketPrice
-            const usdPrev = usd.regularMarketPreviousClose
+            const usdPrice = usd.currentPrice
+            const usdPrev = usd.prevClose
 
             // Gold (XAUTRYG)
             const gold = getQuote('GC=F')
             if (gold) {
-                const goldPerGram = gold.regularMarketPrice / 31.1
+                const goldPerGram = gold.currentPrice / 31.1
                 const goldTRY = goldPerGram * usdPrice
 
-                const prevGoldPerGram = gold.regularMarketPreviousClose / 31.1
+                const prevGoldPerGram = gold.prevClose / 31.1
                 const prevGoldTRY = prevGoldPerGram * usdPrev
 
                 results.push({
@@ -102,10 +102,10 @@ export async function fetchMarketData() {
             // Silver (XAGTRYG)
             const silver = getQuote('SI=F')
             if (silver) {
-                const silverPerGram = silver.regularMarketPrice / 31.1
+                const silverPerGram = silver.currentPrice / 31.1
                 const silverTRY = silverPerGram * usdPrice
 
-                const prevSilverPerGram = silver.regularMarketPreviousClose / 31.1
+                const prevSilverPerGram = silver.prevClose / 31.1
                 const prevSilverTRY = prevSilverPerGram * usdPrev
 
                 results.push({

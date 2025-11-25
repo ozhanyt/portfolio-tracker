@@ -17,8 +17,8 @@ export function useIntradayData(portfolio, multiplier = 1, fundName = '') {
 
             setIsLoading(true)
             try {
-                // Check if it is a foreign fund
-                const isForeignFund = fundName && fundName.toLowerCase().includes('yabancı')
+                // Check if it is a foreign fund OR if the portfolio contains foreign stocks
+                const isForeignFund = (fundName && fundName.toLowerCase().includes('yabancı')) || portfolio.some(item => item.isForeign)
 
                 // Fetch history for all stocks
                 const promises = portfolio.map(item => {

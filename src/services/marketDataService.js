@@ -8,133 +8,35 @@ const CACHE_KEY = 'market_data_cache'
 const CACHE_DURATION = 15 * 60 * 1000 // 15 minutes to reduce quota usage
 
 export async function fetchMarketData() {
-    // Check cache first
-    try {
-        const cachedItem = localStorage.getItem(CACHE_KEY)
-        if (cachedItem) {
-            const { timestamp, data } = JSON.parse(cachedItem)
-            if (Date.now() - timestamp < CACHE_DURATION) {
-                return data
-            }
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+        const { timestamp, data } = JSON.parse(cached);
+        if (Date.now() - timestamp < CACHE_DURATION) {
+            return data;
         }
-    } catch (e) {
-        // Ignore cache errors
     }
 
     try {
-        const symbols = [
-            'XU100.IS',     // BIST100
-            'TRY=X',     // USD/TRY
-            'BTC-USD',      // Bitcoin
-            'GC=F',         // Gold Futures (per ounce)
-            'SI=F'          // Silver Futures (per ounce)
-        ]
+        const SHEET_API_URL = import.meta.env.VITE_SHEET_API_URL;
+        // Cache busting için timestamp ekle
+        const response = await fetch(`${SHEET_API_URL}?market=true&t=${Date.now()}`);
 
-        // Google Apps Script Proxy URL
-        const url = `https://script.google.com/macros/s/AKfycbyCwIaLcYAT_jfoc4GsAfMulPSRi16Xhu1wR2yj4u5fnql8hpHLiZMWi6imNl8ZT6TN/exec?symbols=${symbols.join(',')}`
-        const response = await fetch(url)
+        if (!response.ok) throw new Error('Market data fetch failed');
 
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status}`)
-        }
+        const data = await response.json();
 
-        const data = await response.json()
+        // Veriyi formatla (Sheet'ten gelen format: { symbol, price, changePercent })
+        // UI'ın beklediği format: { symbol, price, changePercent } (Aynı)
 
-        const getQuote = (symbol) => data.find(q => q.code === symbol && q.success)
+        // Cache'le
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+            timestamp: Date.now(),
+            data
+        }));
 
-        const results = []
-
-        // BIST100
-        const bist = getQuote('XU100.IS')
-        if (bist) {
-            results.push({
-                symbol: 'BIST100',
-                price: bist.currentPrice,
-                change: bist.currentPrice - bist.prevClose,
-                changePercent: ((bist.currentPrice - bist.prevClose) / bist.prevClose) * 100
-            })
-        }
-
-        // USDTRY
-        const usd = getQuote('TRY=X')
-        if (usd) {
-            results.push({
-                symbol: 'USDTRY',
-                price: usd.currentPrice,
-                change: usd.currentPrice - usd.prevClose,
-                changePercent: ((usd.currentPrice - usd.prevClose) / usd.prevClose) * 100
-            })
-        }
-
-        // BTCUSD
-        const btc = getQuote('BTC-USD')
-        if (btc) {
-            results.push({
-                symbol: 'BTCUSD',
-                price: btc.currentPrice,
-                change: btc.currentPrice - btc.prevClose,
-                changePercent: ((btc.currentPrice - btc.prevClose) / btc.prevClose) * 100
-            })
-        }
-
-        // Precious Metals Calculation (TRY per gram)
-        if (usd) {
-            const usdPrice = usd.currentPrice
-            const usdPrev = usd.prevClose
-
-            // Gold (XAUTRYG)
-            const gold = getQuote('GC=F')
-            if (gold) {
-                const goldPerGram = gold.currentPrice / 31.1
-                const goldTRY = goldPerGram * usdPrice
-
-                const prevGoldPerGram = gold.prevClose / 31.1
-                const prevGoldTRY = prevGoldPerGram * usdPrev
-
-                results.push({
-                    symbol: 'XAUTRYG',
-                    price: goldTRY,
-                    change: goldTRY - prevGoldTRY,
-                    changePercent: ((goldTRY - prevGoldTRY) / prevGoldTRY) * 100
-                })
-            }
-
-            // Silver (XAGTRYG)
-            const silver = getQuote('SI=F')
-            if (silver) {
-                const silverPerGram = silver.currentPrice / 31.1
-                const silverTRY = silverPerGram * usdPrice
-
-                const prevSilverPerGram = silver.prevClose / 31.1
-                const prevSilverTRY = prevSilverPerGram * usdPrev
-
-                results.push({
-                    symbol: 'XAGTRYG',
-                    price: silverTRY,
-                    change: silverTRY - prevSilverTRY,
-                    changePercent: ((silverTRY - prevSilverTRY) / prevSilverTRY) * 100
-                })
-            }
-        }
-
-        // Save to cache
-        if (results.length > 0) {
-            localStorage.setItem(CACHE_KEY, JSON.stringify({
-                timestamp: Date.now(),
-                data: results
-            }))
-        }
-
-        return results
+        return data;
     } catch (error) {
-        console.error('Error fetching market data:', error)
-        // Return stale cache if available
-        try {
-            const cachedItem = localStorage.getItem(CACHE_KEY)
-            if (cachedItem) {
-                return JSON.parse(cachedItem).data
-            }
-        } catch (e) { }
-        return []
+        console.error('Market data error:', error);
+        return [];
     }
 }

@@ -105,19 +105,17 @@ export function useStockPriceUpdates(portfolio, onUpdate, intervalMs = 900000) {
             }
         }
 
-        // Initial update
+        // Initial update - IMMEDIATE
         updatePrices()
 
         // Set up interval for periodic updates
-        updateTimeoutRef.current = setInterval(updatePrices, intervalMs)
+        const interval = setInterval(updatePrices, intervalMs)
 
         // Cleanup
         return () => {
-            if (updateTimeoutRef.current) {
-                clearInterval(updateTimeoutRef.current)
-            }
+            clearInterval(interval)
         }
-    }, [portfolioKey, intervalMs, usdRate]) // Re-run if portfolio or rate changes
+    }, [portfolioKey, intervalMs]) // Re-run only if portfolio or interval changes
 
     return {
         lastUpdate,

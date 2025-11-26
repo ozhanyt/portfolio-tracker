@@ -218,6 +218,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                         return {
                             ...h,
                             currentPrice: update.currentPrice,
+                            quantity: update.quantity || h.quantity, // Sync quantity from Sheet API
                             // Sync cost with prevClose to match PortfolioDetailPage logic
                             // This ensures Overview shows "Daily Return" instead of "Total Return"
                             // consistent with the Detail Page view.

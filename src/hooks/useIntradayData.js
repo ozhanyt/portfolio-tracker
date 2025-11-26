@@ -15,6 +15,12 @@ export function useIntradayData(portfolio, multiplier = 1, fundName = '') {
                 return
             }
 
+            // CHARTS DISABLED - Intraday quota sorununu önlemek için kapalı
+            // Boş veri döndür ve döngüye girme
+            setChartData([])
+            setIsLoading(false)
+            return
+
             setIsLoading(true)
             try {
                 // Check if it is a foreign fund OR if the portfolio contains foreign stocks

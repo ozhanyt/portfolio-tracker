@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { LayoutDashboard, TrendingUp, TrendingDown, Wallet, Plus, ArrowLeft, RefreshCw, LineChart, Settings } from 'lucide-react'
+import { LayoutDashboard, TrendingUp, TrendingDown, Wallet, Plus, ArrowLeft, RefreshCw, Settings } from 'lucide-react'
 import { PortfolioTable } from '@/components/PortfolioTable'
 import { AddStockDialog } from '@/components/AddStockDialog'
 import { formatCurrency, formatPercent, formatNumber, cn } from '@/lib/utils'
 import { useStockPriceUpdates } from '@/hooks/useStockPriceUpdates'
-import { IntradayPerformanceChart } from '@/components/IntradayPerformanceChart'
-import { useIntradayData } from '@/hooks/useIntradayData'
+
 import { subscribeToFund, updateFundHoldings, updateFundMultiplier, updateFundTotals } from '../services/firestoreService'
 import { useAdmin } from '@/contexts/AdminContext'
 
@@ -22,12 +21,32 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingStock, setEditingStock] = useState(null)
 
+  const latestPricesRef = useRef({})
+
   // Subscribe to fund data
   useEffect(() => {
     const unsubscribe = subscribeToFund(fundCode, (data) => {
       if (data) {
         setFundData(data)
-        setPortfolio(data.holdings || [])
+
+        // Merge incoming Firestore holdings with locally cached prices
+        // This prevents the UI from reverting to stale prices when Firestore updates (e.g. after saving totals)
+        const mergedHoldings = (data.holdings || []).map(item => {
+          const cachedPrice = latestPricesRef.current[item.code]
+          if (cachedPrice) {
+            return {
+              ...item,
+              currentPrice: cachedPrice.currentPrice,
+              prevClose: cachedPrice.prevClose,
+              quantity: cachedPrice.quantity || item.quantity,
+              cost: cachedPrice.prevClose,
+              lastRolloverDate: cachedPrice.lastRolloverDate || item.lastRolloverDate
+            }
+          }
+          return item
+        })
+
+        setPortfolio(mergedHoldings)
         setMultiplier(data.multiplier || 1)
       } else {
         // Fund not found
@@ -39,6 +58,11 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
   // Auto-update stock prices
   const handlePriceUpdate = async (prices) => {
+    // Update the ref with new prices
+    prices.forEach(p => {
+      latestPricesRef.current[p.code] = p
+    })
+
     const newPortfolio = portfolio.map(item => {
       const priceData = prices.find(p => p.code === item.code)
       if (priceData) {
@@ -46,6 +70,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
           ...item,
           currentPrice: priceData.currentPrice,
           prevClose: priceData.prevClose,
+          quantity: priceData.quantity || item.quantity, // Sync quantity from Sheet API
           cost: priceData.prevClose, // Sync cost with prevClose for daily tracking
           lastRolloverDate: priceData.lastRolloverDate || item.lastRolloverDate || null // Update rollover date if present
         }
@@ -54,12 +79,6 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     })
 
     setPortfolio(newPortfolio)
-
-    // Only Admin updates the database with live prices to save quota
-    // UPDATE: Removed to prevent Quota Exceeded errors. Overview Page fetches its own prices.
-    // if (isAdmin) {
-    //   await updateFundHoldings(fundCode, newPortfolio)
-    // }
   }
 
   const { lastUpdate, isUpdating, error, usdRate, prevUsdRate } = useStockPriceUpdates(portfolio, handlePriceUpdate, 60000)
@@ -151,8 +170,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     }
   }, [totalValue, totalProfit, totalReturnPercent, fundData, fundCode])
 
-  // Get Intraday Data
-  const { chartData, isLoading: isChartLoading } = useIntradayData(calculatedPortfolio, multiplier, fundData?.name)
+
 
   // Add weights
   const finalData = calculatedPortfolio.map(item => ({
@@ -307,32 +325,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
           </div>
         </header>
 
-        {/* Intraday Chart Section */}
-        {/* Intraday Chart Section - Hidden for Foreign Funds */}
-        {!fundData?.name?.toLowerCase().includes('yabancı') && (
-          <Card className="mb-8 shadow-md">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-semibold flex items-center justify-between w-full">
-                <div className="flex items-center gap-2">
-                  <LineChart className="h-5 w-5 text-primary" />
-                  Günlük Performans
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                  </span>
-                  <span className="text-sm text-muted-foreground font-normal">Canlı</span>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] w-full">
-                <IntradayPerformanceChart data={chartData} isLoading={isChartLoading} />
-              </div>
-            </CardContent>
-          </Card>
-        )}
+
 
         <div className="grid gap-6 md:grid-cols-2">
           {/* Left Column: Total Value & Top Gainers */}

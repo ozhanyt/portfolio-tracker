@@ -11,6 +11,7 @@ export function useMarketData(intervalMs = 300000) {
   useEffect(() => {
     const updateMarketData = async () => {
       const data = await fetchMarketData()
+      console.log('📊 Market Data Response:', data);
       setMarketData(data)
     }
 

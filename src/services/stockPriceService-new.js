@@ -1,5 +1,3 @@
-import { fetchMarketData } from './marketDataService';
-
 /**
  * New Stock Price Service using Google Sheets API
  * Bu servis artık Sheet'teki güncellenmiş veriyi kullanır (Yahoo quota sorunu çözülür)
@@ -7,8 +5,8 @@ import { fetchMarketData } from './marketDataService';
 
 const SHEET_API_URL = import.meta.env.VITE_SHEET_API_URL;
 
-// Cache ayarları (1 dakika - Test için düşürüldü)
-const CACHE_DURATION = 1 * 60 * 1000;
+// Cache ayarları (30 dakika)
+const CACHE_DURATION = 30 * 60 * 1000;
 const CACHE_PREFIX = 'portfolio_cache_';
 
 function getCachedPrice(symbol) {
@@ -51,12 +49,12 @@ function getStalePrice(symbol) {
  * Tek bir hisse için fiyat getir
  */
 export async function fetchStockPrice(symbol, options = {}) {
+    // Önce cache'e bak
     const cached = getCachedPrice(symbol);
     if (cached) return cached;
 
     try {
-        // Cache busting için timestamp ekle
-        const url = `${SHEET_API_URL}?symbol=${encodeURIComponent(symbol)}&t=${Date.now()}`;
+        const url = `${SHEET_API_URL}?symbol=${encodeURIComponent(symbol)}`;
         const response = await fetch(url);
 
         if (!response.ok) {
@@ -69,6 +67,7 @@ export async function fetchStockPrice(symbol, options = {}) {
             setCachedPrice(symbol, data);
             return data;
         } else {
+            // Stale cache kullan
             const stale = getStalePrice(symbol);
             if (stale) return stale;
 
@@ -81,6 +80,7 @@ export async function fetchStockPrice(symbol, options = {}) {
     } catch (error) {
         console.error(`Error fetching price for ${symbol}:`, error);
 
+        // Stale cache kullan
         const stale = getStalePrice(symbol);
         if (stale) return stale;
 
@@ -98,6 +98,7 @@ export async function fetchStockPrice(symbol, options = {}) {
 export async function fetchStockPrices(symbols, options = {}) {
     if (symbols.length === 0) return [];
 
+    // Önce cache'e bak
     const cachedResults = [];
     const symbolsToFetch = [];
 
@@ -116,9 +117,7 @@ export async function fetchStockPrices(symbols, options = {}) {
 
     try {
         const symbolsParam = symbolsToFetch.join(',');
-        // Cache busting için timestamp ekle
-        const url = `${SHEET_API_URL}?symbols=${encodeURIComponent(symbolsParam)}&t=${Date.now()}`;
-
+        const url = `${SHEET_API_URL}?symbols=${encodeURIComponent(symbolsParam)}`;
         const response = await fetch(url);
 
         if (!response.ok) {
@@ -139,6 +138,7 @@ export async function fetchStockPrices(symbols, options = {}) {
     } catch (error) {
         console.error('Batch fetch error:', error);
 
+        // Stale cache kullan
         const fallbackResults = symbolsToFetch.map(s => {
             const stale = getStalePrice(s);
             if (stale) return stale;
@@ -150,10 +150,10 @@ export async function fetchStockPrices(symbols, options = {}) {
 }
 
 /**
- * Intraday grafikler KAPALI
+ * Intraday geçmişi getir (Şimdilik desteklenmiyor, gelecekte Sheet'e eklenebilir)
  */
 export async function fetchIntradayHistory(symbol, options = {}) {
-    console.log('Intraday charts disabled');
+    console.warn('Intraday history is not available via Sheet API yet');
     return {
         symbol,
         data: [],
@@ -162,33 +162,13 @@ export async function fetchIntradayHistory(symbol, options = {}) {
 }
 
 /**
- * USD/TRY kuru
- */
-
-
-/**
- * USD/TRY kuru
+ * USD/TRY kuru getir (TCMB verisi Sheet'te varsa oradan alınabilir)
  */
 export async function fetchUSDTRYRate() {
+    // Bu fonksiyon TCMB'den çekiyor, olduğu gibi bırakabiliriz
+    // Veya Sheet'te Q2 hücresinde varsa oradan okuyabiliriz
     try {
-        const marketData = await fetchMarketData();
-        const usdData = marketData.find(item => item.symbol === 'USDTRY');
-
-        if (usdData && usdData.price) {
-            // Calculate previous rate from change percent
-            // change = ((current - prev) / prev) * 100
-            // prev = current / (1 + change/100)
-            let prevRate = usdData.price;
-            if (usdData.changePercent !== undefined && usdData.changePercent !== null) {
-                prevRate = usdData.price / (1 + (usdData.changePercent / 100));
-            }
-
-            return {
-                currentRate: usdData.price,
-                prevRate: prevRate
-            };
-        }
-
+        // Şimdilik varsayılan değer dönelim, gerekirse Sheet'ten okutabiliriz
         return {
             currentRate: 34.50,
             prevRate: 34.50

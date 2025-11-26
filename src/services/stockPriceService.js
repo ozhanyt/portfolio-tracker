@@ -282,7 +282,7 @@ export async function fetchIntradayHistory(symbol, options = {}) {
 export async function fetchUSDTRYRate() {
     // Using Google Apps Script Proxy for USDTRY as well
     try {
-        const url = `https://script.google.com/macros/s/AKfycbwbXQQVniEt-pGbhgCTMTrrnDOnx9Irx6H92wenanMyyw4GfWWn8Dxr23oRHUtDyEQq/exec?type=intraday&symbol=USDTRY=X&interval=30m&range=5d`
+        const url = `https://script.google.com/macros/s/AKfycbwbXQQVniEt-pGbhgCTMTrrnDOnx9Irx6H92wenanMyyw4GfWWn8Dxr23oRHUtDyEQq/exec?type=intraday&symbol=TRY=X&interval=30m&range=5d`
 
         const response = await fetch(url)
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
@@ -292,14 +292,14 @@ export async function fetchUSDTRYRate() {
 
         if (!result || !result.timestamp || !result.indicators.quote[0].close) {
             // Fallback to simple quote if chart fails
-            const quoteUrl = `https://script.google.com/macros/s/AKfycbwbXQQVniEt-pGbhgCTMTrrnDOnx9Irx6H92wenanMyyw4GfWWn8Dxr23oRHUtDyEQq/exec?symbols=USDTRY=X`
+            const quoteUrl = `https://script.google.com/macros/s/AKfycbwbXQQVniEt-pGbhgCTMTrrnDOnx9Irx6H92wenanMyyw4GfWWn8Dxr23oRHUtDyEQq/exec?symbols=TRY=X`
             const quoteResponse = await fetch(quoteUrl)
             const quoteData = await quoteResponse.json()
-            const quote = quoteData.find(q => q.code === 'USDTRY=X')
+            const quote = quoteData.find(q => q.code === 'TRY=X')
             if (quote && quote.success) {
                 return { currentRate: quote.currentPrice, prevRate: quote.prevClose }
             }
-            throw new Error("No data found for USDTRY=X")
+            throw new Error("No data found for TRY=X")
         }
 
         const timestamps = result.timestamp

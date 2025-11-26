@@ -24,7 +24,7 @@ export async function fetchMarketData() {
     try {
         const symbols = [
             'XU100.IS',     // BIST100
-            'USDTRY=X',     // USD/TRY
+            'TRY=X',     // USD/TRY
             'BTC-USD',      // Bitcoin
             'GC=F',         // Gold Futures (per ounce)
             'SI=F'          // Silver Futures (per ounce)
@@ -56,7 +56,7 @@ export async function fetchMarketData() {
         }
 
         // USDTRY
-        const usd = getQuote('USDTRY=X')
+        const usd = getQuote('TRY=X')
         if (usd) {
             results.push({
                 symbol: 'USDTRY',

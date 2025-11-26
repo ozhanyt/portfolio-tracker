@@ -19,7 +19,7 @@ function getFundCode(symbol) {
 }
 
 // Persistent cache using localStorage
-const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes (via Google Apps Script)
+const CACHE_DURATION = 15 * 60 * 1000 // 15 minutes to reduce quota usage
 const CACHE_PREFIX = 'portfolio_cache_'
 
 function getCachedPrice(symbol) {

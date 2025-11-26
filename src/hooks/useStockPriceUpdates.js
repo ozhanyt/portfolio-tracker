@@ -7,7 +7,7 @@ import { fetchStockPrices, fetchUSDTRYRate } from '@/services/stockPriceService'
  * @param {Function} onUpdate - Callback function to update prices
  * @param {number} intervalMs - Update interval in milliseconds (default: 300000 = 5 minutes)
  */
-export function useStockPriceUpdates(portfolio, onUpdate, intervalMs = 300000) {
+export function useStockPriceUpdates(portfolio, onUpdate, intervalMs = 900000) {
     const [lastUpdate, setLastUpdate] = useState(null)
     const [isUpdating, setIsUpdating] = useState(false)
     const [error, setError] = useState(null)

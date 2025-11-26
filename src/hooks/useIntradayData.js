@@ -258,8 +258,8 @@ export function useIntradayData(portfolio, multiplier = 1, fundName = '') {
 
         loadData()
 
-        // Refresh every minute
-        const interval = setInterval(loadData, 60000)
+        // Refresh every 3 minutes to reduce quota usage
+        const interval = setInterval(loadData, 180000)
         return () => {
             isMounted = false
             clearInterval(interval)

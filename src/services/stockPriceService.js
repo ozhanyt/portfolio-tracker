@@ -147,7 +147,7 @@ export async function fetchStockPrices(symbols, options = {}) {
             )
 
             const symbolsParam = yahooSymbols.join(',')
-            const url = `https://script.google.com/macros/s/AKfycbwbXQQVniEt-pGbhgCTMTrrnDOnx9Irx6H92wenanMyyw4GfWWn8Dxr23oRHUtDyEQq/exec?symbols=${symbolsParam}`
+            const url = `https://script.google.com/macros/s/AKfycbyCwIaLcYAT_jfoc4GsAfMulPSRi16Xhu1wR2yj4u5fnql8hpHLiZMWi6imNl8ZT6TN/exec?symbols=${symbolsParam}`
 
             const response = await fetch(url)
 
@@ -244,7 +244,7 @@ export async function fetchIntradayHistory(symbol, options = {}) {
         const interval = '5m'
         const range = options.isForeign ? '5d' : '1d'
 
-        const url = `https://script.google.com/macros/s/AKfycbwbXQQVniEt-pGbhgCTMTrrnDOnx9Irx6H92wenanMyyw4GfWWn8Dxr23oRHUtDyEQq/exec?type=intraday&symbol=${yahooSymbol}&interval=${interval}&range=${range}`
+        const url = `https://script.google.com/macros/s/AKfycbyCwIaLcYAT_jfoc4GsAfMulPSRi16Xhu1wR2yj4u5fnql8hpHLiZMWi6imNl8ZT6TN/exec?type=intraday&symbol=${yahooSymbol}&interval=${interval}&range=${range}`
 
         const response = await fetch(url)
         if (!response.ok) throw new Error(`API error: ${response.status}`)
@@ -282,7 +282,7 @@ export async function fetchIntradayHistory(symbol, options = {}) {
 export async function fetchUSDTRYRate() {
     // Using Google Apps Script Proxy for USDTRY as well
     try {
-        const url = `https://script.google.com/macros/s/AKfycbwbXQQVniEt-pGbhgCTMTrrnDOnx9Irx6H92wenanMyyw4GfWWn8Dxr23oRHUtDyEQq/exec?type=intraday&symbol=TRY=X&interval=30m&range=5d`
+        const url = `https://script.google.com/macros/s/AKfycbyCwIaLcYAT_jfoc4GsAfMulPSRi16Xhu1wR2yj4u5fnql8hpHLiZMWi6imNl8ZT6TN/exec?type=intraday&symbol=TRY=X&interval=30m&range=5d`
 
         const response = await fetch(url)
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
@@ -292,7 +292,7 @@ export async function fetchUSDTRYRate() {
 
         if (!result || !result.timestamp || !result.indicators.quote[0].close) {
             // Fallback to simple quote if chart fails
-            const quoteUrl = `https://script.google.com/macros/s/AKfycbwbXQQVniEt-pGbhgCTMTrrnDOnx9Irx6H92wenanMyyw4GfWWn8Dxr23oRHUtDyEQq/exec?symbols=TRY=X`
+            const quoteUrl = `https://script.google.com/macros/s/AKfycbyCwIaLcYAT_jfoc4GsAfMulPSRi16Xhu1wR2yj4u5fnql8hpHLiZMWi6imNl8ZT6TN/exec?symbols=TRY=X`
             const quoteResponse = await fetch(quoteUrl)
             const quoteData = await quoteResponse.json()
             const quote = quoteData.find(q => q.code === 'TRY=X')

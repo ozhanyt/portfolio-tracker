@@ -31,7 +31,7 @@ export async function fetchMarketData() {
         ]
 
         // Google Apps Script Proxy URL
-        const url = `https://script.google.com/macros/s/AKfycbwbXQQVniEt-pGbhgCTMTrrnDOnx9Irx6H92wenanMyyw4GfWWn8Dxr23oRHUtDyEQq/exec?symbols=${symbols.join(',')}`
+        const url = `https://script.google.com/macros/s/AKfycbyCwIaLcYAT_jfoc4GsAfMulPSRi16Xhu1wR2yj4u5fnql8hpHLiZMWi6imNl8ZT6TN/exec?symbols=${symbols.join(',')}`
         const response = await fetch(url)
 
         if (!response.ok) {

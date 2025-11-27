@@ -66,29 +66,7 @@ export function useStockPriceUpdates(portfolio, onUpdate, intervalMs = 900000) {
                 if (foreignSymbols.length > 0) {
                     const foreignPrices = await fetchStockPrices(foreignSymbols, { isForeign: true })
 
-                    // Process Rollover Logic for Foreign Stocks
-                    const now = new Date()
-                    const isAfter1500 = now.getHours() >= 15
-                    const todayStr = now.toISOString().split('T')[0]
-
-                    const processedForeignPrices = foreignPrices.map(priceData => {
-                        const portfolioItem = portfolio.find(p => p.code === priceData.code)
-                        if (!portfolioItem) return priceData
-
-                        // Check if rollover is needed
-                        // If it's after 15:00 AND last rollover was NOT today
-                        if (isAfter1500 && portfolioItem.lastRolloverDate !== todayStr) {
-                            return {
-                                ...priceData,
-                                prevClose: priceData.currentPrice, // Set prevClose to currentPrice
-                                lastRolloverDate: todayStr // Update rollover date
-                            }
-                        }
-
-                        return priceData
-                    })
-
-                    allPrices = [...allPrices, ...processedForeignPrices]
+                    allPrices = [...allPrices, ...foreignPrices]
                 }
 
                 if (allPrices.length > 0) {

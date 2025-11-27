@@ -155,6 +155,26 @@ function getAllStockData(sheet) {
   // B:F sütunları (Hisse Kodu, ?, Adet, Önceki Kapanış, Bugünkü Fiyat)
   const data = sheet.getRange(2, 2, lastRow - 1, 5).getValues();
   
+  // Q1 hücresinden güncelleme saatini oku
+  const updateTimeValue = sheet.getRange("Q1").getValue();
+  let formattedTime = null;
+  
+  if (updateTimeValue) {
+    try {
+      // Eğer tarih objesi ise saat:dakika formatına çevir
+      if (updateTimeValue instanceof Date) {
+        const hours = updateTimeValue.getHours().toString().padStart(2, '0');
+        const minutes = updateTimeValue.getMinutes().toString().padStart(2, '0');
+        formattedTime = `${hours}:${minutes}`;
+      } else {
+        // String ise direkt al (veya parse etmeye çalış)
+        formattedTime = String(updateTimeValue);
+      }
+    } catch (e) {
+      // Ignore error
+    }
+  }
+
   const results = [];
   
   for (let i = 0; i < data.length; i++) {
@@ -169,6 +189,7 @@ function getAllStockData(sheet) {
       currentPrice: parseNumber(row[4]),  // F sütunu
       prevClose: parseNumber(row[3]),     // E sütunu
       quantity: parseNumber(row[2]),      // D sütunu
+      updateTime: formattedTime,          // Sheet'ten gelen güncelleme saati
       success: true
     });
   }

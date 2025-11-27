@@ -27,7 +27,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculateFundReturn, getCurrentTime }) {
+function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculateFundReturn, getCurrentTime, usdRate }) {
     const {
         attributes,
         listeners,
@@ -44,7 +44,7 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
         zIndex: isDragging ? 1000 : 1,
     };
 
-    let { totalReturn, totalValue, totalProfit } = calculateFundReturn(fund.holdings || [], fund.multiplier)
+    let { totalReturn, totalValue, totalProfit } = calculateFundReturn(fund.holdings || [], fund.multiplier, usdRate)
 
     // Prefer synced values from Firestore if available (Handles foreign stocks and Method B correctly)
     // BUT if we have live updates (_isLive flag), prefer the calculated values (which use live prices)
@@ -172,7 +172,7 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
                         </div>
                         <div className="text-right pt-2">
                             <span className="text-[10px] text-muted-foreground">
-                                Son Güncelleme: {getCurrentTime()}
+                                Son Güncelleme: {fund.lastUpdateTime || getCurrentTime()}
                             </span>
                         </div>
                     </div>
@@ -215,6 +215,9 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                 const updatedHoldings = fund.holdings.map(h => {
                     const update = updatedPrices.find(p => p.code === h.code)
                     if (update) {
+                        if (update.updateTime && !sheetUpdateTime) {
+                            sheetUpdateTime = update.updateTime
+                        }
                         return {
                             ...h,
                             currentPrice: update.currentPrice,
@@ -237,7 +240,8 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                     ...fund,
                     holdings: updatedHoldings,
                     // We add a flag to tell SortableFundCard to prefer calculated values over stale Firestore values
-                    _isLive: true
+                    _isLive: true,
+                    lastUpdateTime: sheetUpdateTime // Store the time from the Sheet
                 }
             })
         })
@@ -272,12 +276,26 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
         setActiveId(null);
     };
 
-    const calculateFundReturn = (portfolio, multiplier = 1) => {
+    const calculateFundReturn = (portfolio, multiplier = 1, usdRate = null) => {
         if (!portfolio || portfolio.length === 0) return { totalReturn: 0, totalValue: 0, totalProfit: 0 }
 
         const calculated = portfolio.map(item => {
-            const currentValue = item.quantity * item.currentPrice
-            const totalCost = item.quantity * item.cost
+            let currentValue, totalCost
+
+            if (item.isForeign && usdRate) {
+                // Foreign Stock Calculation
+                // Current Value (TL) = Price (USD) * Rate * Qty
+                // Total Cost (TL) = Cost (USD/PrevClose) * Rate * Qty
+                // Note: We use current Rate for both to show "Daily Return" in TL terms correctly based on price change
+                // For "Total Return" we would need historical rate, but Overview is focused on daily/current snapshot
+                currentValue = item.quantity * item.currentPrice * usdRate
+                totalCost = item.quantity * item.cost * usdRate
+            } else {
+                // Local Stock
+                currentValue = item.quantity * item.currentPrice
+                totalCost = item.quantity * item.cost
+            }
+
             return {
                 currentValue,
                 totalCost,
@@ -417,17 +435,21 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                         strategy={rectSortingStrategy}
                     >
                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {funds.map((fund) => (
-                                <SortableFundCard
-                                    key={fund.id}
-                                    fund={fund}
-                                    isAdmin={isAdmin}
-                                    navigate={navigate}
-                                    handleDeleteFund={handleDeleteFund}
-                                    calculateFundReturn={calculateFundReturn}
-                                    getCurrentTime={getCurrentTime}
-                                />
-                            ))}
+                            {funds.map((fund) => {
+                                const usdRate = marketData.find(m => m.symbol === 'USDTRY')?.price
+                                return (
+                                    <SortableFundCard
+                                        key={fund.id}
+                                        fund={fund}
+                                        isAdmin={isAdmin}
+                                        navigate={navigate}
+                                        handleDeleteFund={handleDeleteFund}
+                                        calculateFundReturn={calculateFundReturn}
+                                        getCurrentTime={getCurrentTime}
+                                        usdRate={usdRate}
+                                    />
+                                )
+                            })}
                         </div>
                     </SortableContext>
                     <DragOverlay>
@@ -439,6 +461,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                                 handleDeleteFund={handleDeleteFund}
                                 calculateFundReturn={calculateFundReturn}
                                 getCurrentTime={getCurrentTime}
+                                usdRate={marketData.find(m => m.symbol === 'USDTRY')?.price}
                             />
                         ) : null}
                     </DragOverlay>

@@ -27,7 +27,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculateFundReturn, getCurrentTime, usdRate }) {
+function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculateFundReturn, getCurrentTime, usdRate, prevUsdRate }) {
     const {
         attributes,
         listeners,
@@ -206,7 +206,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
 
     // Use the hook to fetch live prices for all holdings
     // This ensures Overview Page is always up to date without visiting Detail Page
-    useStockPriceUpdates(allHoldings, (updatedPrices) => {
+    const { usdRate, prevUsdRate } = useStockPriceUpdates(allHoldings, (updatedPrices) => {
         setFunds(currentFunds => {
             return currentFunds.map(fund => {
                 if (!fund.holdings) return fund
@@ -278,14 +278,6 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
         }
         setActiveId(null);
     };
-
-    // Calculate USD Rates (Current and Previous)
-    const usdTry = marketData.find(m => m.symbol === 'USDTRY')
-    const usdRate = usdTry?.price
-    let prevUsdRate = usdRate
-    if (usdTry && usdTry.changePercent) {
-        prevUsdRate = usdRate / (1 + usdTry.changePercent / 100)
-    }
 
     const calculateFundReturn = (portfolio, multiplier = 1, usdRate = null, prevUsdRate = null) => {
         if (!portfolio || portfolio.length === 0) return { totalReturn: 0, totalValue: 0, totalProfit: 0 }
@@ -447,7 +439,6 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                     >
                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {funds.map((fund) => {
-                                const usdRate = marketData.find(m => m.symbol === 'USDTRY')?.price
                                 return (
                                     <SortableFundCard
                                         key={fund.id}
@@ -458,6 +449,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                                         calculateFundReturn={calculateFundReturn}
                                         getCurrentTime={getCurrentTime}
                                         usdRate={usdRate}
+                                        prevUsdRate={prevUsdRate}
                                     />
                                 )
                             })}
@@ -466,14 +458,29 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                     <DragOverlay>
                         {activeId ? (
                             <SortableFundCard
+                                fund={funds.find(f => f.id === activeId)}
+                                isAdmin={isAdmin}
+                                navigate={navigate}
+                                handleDeleteFund={handleDeleteFund}
+                                calculateFundReturn={calculateFundReturn}
+                                getCurrentTime={getCurrentTime}
+                                usdRate={usdRate}
+                                prevUsdRate={prevUsdRate}
+                            />
+                        ) : null}
+                    </DragOverlay>
+                </DndContext>
+
+                {funds.length === 0 && (
+                    <div className="text-center py-12">
                         <p className="text-muted-foreground">Henüz fon eklenmemiş</p>
                     </div>
                 )}
 
-                    <AddFundDialog
-                        isOpen={isAddFundOpen}
-                        onClose={() => setIsAddFundOpen(false)}
-                    />
+                <AddFundDialog
+                    isOpen={isAddFundOpen}
+                    onClose={() => setIsAddFundOpen(false)}
+                />
             </div>
         </div>
     )

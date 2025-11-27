@@ -211,6 +211,9 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
             return currentFunds.map(fund => {
                 if (!fund.holdings) return fund
 
+                // Find the update time from any stock in this fund (they all come from the same sheet)
+                let sheetUpdateTime = null
+
                 // Update holdings with new prices
                 const updatedHoldings = fund.holdings.map(h => {
                     const update = updatedPrices.find(p => p.code === h.code)

@@ -44,7 +44,7 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
         zIndex: isDragging ? 1000 : 1,
     };
 
-    let { totalReturn, totalValue, totalProfit } = calculateFundReturn(fund.holdings || [], fund.multiplier, usdRate)
+    let { totalReturn, totalValue, totalProfit } = calculateFundReturn(fund.holdings || [], fund.multiplier, usdRate, prevUsdRate)
 
     // Prefer synced values from Firestore if available (Handles foreign stocks and Method B correctly)
     // BUT if we have live updates (_isLive flag), prefer the calculated values (which use live prices)
@@ -279,7 +279,15 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
         setActiveId(null);
     };
 
-    const calculateFundReturn = (portfolio, multiplier = 1, usdRate = null) => {
+    // Calculate USD Rates (Current and Previous)
+    const usdTry = marketData.find(m => m.symbol === 'USDTRY')
+    const usdRate = usdTry?.price
+    let prevUsdRate = usdRate
+    if (usdTry && usdTry.changePercent) {
+        prevUsdRate = usdRate / (1 + usdTry.changePercent / 100)
+    }
+
+    const calculateFundReturn = (portfolio, multiplier = 1, usdRate = null, prevUsdRate = null) => {
         if (!portfolio || portfolio.length === 0) return { totalReturn: 0, totalValue: 0, totalProfit: 0 }
 
         const calculated = portfolio.map(item => {
@@ -288,11 +296,11 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
             if (item.isForeign && usdRate) {
                 // Foreign Stock Calculation
                 // Current Value (TL) = Price (USD) * Rate * Qty
-                // Total Cost (TL) = Cost (USD/PrevClose) * Rate * Qty
-                // Note: We use current Rate for both to show "Daily Return" in TL terms correctly based on price change
-                // For "Total Return" we would need historical rate, but Overview is focused on daily/current snapshot
+                // Total Cost (TL) = Cost (USD/PrevClose) * PrevRate * Qty
+                const effectivePrevRate = prevUsdRate || usdRate
+
                 currentValue = item.quantity * item.currentPrice * usdRate
-                totalCost = item.quantity * item.cost * usdRate
+                totalCost = item.quantity * item.cost * effectivePrevRate
             } else {
                 // Local Stock
                 currentValue = item.quantity * item.currentPrice
@@ -458,28 +466,14 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                     <DragOverlay>
                         {activeId ? (
                             <SortableFundCard
-                                fund={funds.find(f => f.id === activeId)}
-                                isAdmin={isAdmin}
-                                navigate={navigate}
-                                handleDeleteFund={handleDeleteFund}
-                                calculateFundReturn={calculateFundReturn}
-                                getCurrentTime={getCurrentTime}
-                                usdRate={marketData.find(m => m.symbol === 'USDTRY')?.price}
-                            />
-                        ) : null}
-                    </DragOverlay>
-                </DndContext>
-
-                {funds.length === 0 && (
-                    <div className="text-center py-12">
                         <p className="text-muted-foreground">Henüz fon eklenmemiş</p>
                     </div>
                 )}
 
-                <AddFundDialog
-                    isOpen={isAddFundOpen}
-                    onClose={() => setIsAddFundOpen(false)}
-                />
+                    <AddFundDialog
+                        isOpen={isAddFundOpen}
+                        onClose={() => setIsAddFundOpen(false)}
+                    />
             </div>
         </div>
     )

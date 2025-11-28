@@ -72,6 +72,14 @@ export async function updateFundMultiplier(fundId, multiplier) {
     })
 }
 
+// Update fund PPF rate
+export async function updateFundPpfRate(fundId, ppfRate) {
+    const fundRef = doc(db, FUNDS_COLLECTION, fundId)
+    await updateDoc(fundRef, {
+        ppfRate
+    })
+}
+
 // Update fund name
 export async function updateFundName(fundId, name) {
     const fundRef = doc(db, FUNDS_COLLECTION, fundId)

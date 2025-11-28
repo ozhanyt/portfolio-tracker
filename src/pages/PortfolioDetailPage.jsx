@@ -7,7 +7,7 @@ import { AddStockDialog } from '@/components/AddStockDialog'
 import { formatCurrency, formatPercent, formatNumber, cn } from '@/lib/utils'
 import { useStockPriceUpdates } from '@/hooks/useStockPriceUpdates'
 
-import { subscribeToFund, updateFundHoldings, updateFundMultiplier, updateFundTotals } from '../services/firestoreService'
+import { subscribeToFund, updateFundHoldings, updateFundMultiplier, updateFundTotals, updateFundPpfRate } from '../services/firestoreService'
 import { useAdmin } from '@/contexts/AdminContext'
 
 export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
@@ -18,6 +18,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const [fundData, setFundData] = useState(null)
   const [portfolio, setPortfolio] = useState([])
   const [multiplier, setMultiplier] = useState(1)
+  const [ppfRate, setPpfRate] = useState(0)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingStock, setEditingStock] = useState(null)
 
@@ -48,6 +49,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
         setPortfolio(mergedHoldings)
         setMultiplier(data.multiplier || 1)
+        setPpfRate(data.ppfRate || 0)
       } else {
         // Fund not found
         navigate('/')
@@ -123,9 +125,15 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const totalCost = calculatedPortfolio.reduce((sum, item) => sum + item.totalCost, 0)
   let totalProfit = totalValue - totalCost
 
-  // Apply Multiplier
-  if (multiplier && multiplier !== 1) {
-    totalProfit = totalProfit * multiplier
+  // Apply Multiplier and PPF Calculation
+  // Total Profit = (Stock Profit * Multiplier) + (Total Cost * PPF Rate * (1 - Multiplier))
+  if (multiplier) {
+    const stockWeight = multiplier
+    const ppfWeight = 1 - stockWeight
+    const ppfProfit = totalCost * (ppfRate || 0) * ppfWeight
+
+    // totalProfit currently holds the raw stock profit
+    totalProfit = (totalProfit * stockWeight) + ppfProfit
   }
 
   const totalReturnPercent = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0
@@ -228,6 +236,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   }
 
   const [isSavingMultiplier, setIsSavingMultiplier] = useState(false)
+  const [isSavingPpfRate, setIsSavingPpfRate] = useState(false)
 
   const handleMultiplierChange = async (e) => {
     // If triggered by onBlur, e.target.value is used.
@@ -244,6 +253,22 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
       alert("Hisse ağırlık oranı kaydedilemedi! Kota aşımı olabilir.")
     } finally {
       setIsSavingMultiplier(false)
+    }
+  }
+
+  const handlePpfRateChange = async (e) => {
+    const val = parseFloat(ppfRate)
+
+    if (isNaN(val)) return
+
+    setIsSavingPpfRate(true)
+    try {
+      await updateFundPpfRate(fundCode, val)
+    } catch (error) {
+      console.error("Error saving PPF rate:", error)
+      alert("PPF oranı kaydedilemedi!")
+    } finally {
+      setIsSavingPpfRate(false)
     }
   }
 
@@ -355,31 +380,58 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
                     <Settings className="h-4 w-4 text-purple-500" />
-                    Hisse Ağırlık Oranı (Admin)
+                    Fon Ayarları (Admin)
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="number"
-                      step="0.0001"
-                      value={multiplier}
-                      onChange={(e) => setMultiplier(e.target.value)}
-                      onBlur={handleMultiplierChange}
-                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                      placeholder="Varsayılan: 1"
-                    />
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      {isSavingMultiplier ? (
-                        <span className="text-blue-500 animate-pulse">Kaydediliyor...</span>
-                      ) : (
-                        <span>Mevcut: {multiplier}</span>
-                      )}
-                    </span>
+                <CardContent className="space-y-4">
+                  {/* Stock Weight Input */}
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Hisse Ağırlık Oranı</label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="number"
+                        step="0.0001"
+                        value={multiplier}
+                        onChange={(e) => setMultiplier(e.target.value)}
+                        onBlur={handleMultiplierChange}
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="Örn: 0.85"
+                      />
+                      <span className="text-xs text-muted-foreground whitespace-nowrap w-24">
+                        {isSavingMultiplier ? (
+                          <span className="text-blue-500 animate-pulse">Kaydediliyor...</span>
+                        ) : (
+                          <span>Mevcut: {multiplier}</span>
+                        )}
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-2">
-                    Bu oran Toplam Kar/Zarar hesaplamasında çarpan olarak kullanılır.
-                  </p>
+
+                  {/* PPF Rate Input */}
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">PPF Oranı (Mevduat/Repo)</label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="number"
+                        step="0.0001"
+                        value={ppfRate}
+                        onChange={(e) => setPpfRate(e.target.value)}
+                        onBlur={handlePpfRateChange}
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="Örn: 0.05"
+                      />
+                      <span className="text-xs text-muted-foreground whitespace-nowrap w-24">
+                        {isSavingPpfRate ? (
+                          <span className="text-blue-500 animate-pulse">Kaydediliyor...</span>
+                        ) : (
+                          <span>Mevcut: {ppfRate}</span>
+                        )}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-2">
+                      Toplam Kar = (Hisse Karı * Ağırlık) + (Toplam Maliyet * PPF Oranı * (1 - Ağırlık))
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             )}

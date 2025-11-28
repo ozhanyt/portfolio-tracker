@@ -565,6 +565,29 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
           onAdd={handleAddStock}
           editingStock={editingStock}
         />
+
+        {isAdmin && (
+          <Card className="mt-8 border-dashed border-2 border-yellow-500 bg-yellow-50/10">
+            <CardHeader>
+              <CardTitle className="text-sm text-yellow-600">Debug Info (Admin Only)</CardTitle>
+            </CardHeader>
+            <CardContent className="text-xs font-mono space-y-1">
+              <p>Multiplier (State): {multiplier} ({typeof multiplier})</p>
+              <p>Total Value: {totalValue}</p>
+              <p>Total Cost: {totalCost}</p>
+              <p>Total Profit: {totalProfit}</p>
+              <p>PPF Rate: {ppfRate}</p>
+              <p>Sample Impact Calculation (Top Gainer):</p>
+              {finalData.length > 0 && (
+                <p>
+                  {finalData[0].code}: Profit={finalData[0].profitTL},
+                  Impact=({finalData[0].profitTL} * {multiplier}) / {totalCost} * 100 =
+                  {(finalData[0].profitTL * multiplier / totalCost * 100).toFixed(4)}%
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div >
     </div >
   )

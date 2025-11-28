@@ -116,7 +116,12 @@ function getStockData(sheet, symbol) {
   const codes = sheet.getRange(2, 2, lastRow - 1, 1).getValues().flat();
   
   // Hisseyi bul
-  const rowIndex = codes.findIndex(code => String(code).trim().toUpperCase() === symbol.toUpperCase());
+  // Hisseyi bul
+  const rowIndex = codes.findIndex(code => {
+    let c = String(code).trim();
+    c = c.replace(/ FONU$/i, ''); // Remove " FONU" suffix
+    return c.toUpperCase() === symbol.toUpperCase();
+  });
   
   if (rowIndex === -1) {
     return {
@@ -179,7 +184,10 @@ function getAllStockData(sheet) {
   
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
-    const code = String(row[0]).trim();
+    let code = String(row[0]).trim();
+    
+    // " FONU" suffix'ini temizle (Örn: "HMV FONU" -> "HMV")
+    code = code.replace(/ FONU$/i, '').trim();
     
     // Boş satırları atla
     if (!code || code === '' || code === '#N/A') continue;

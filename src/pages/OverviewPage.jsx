@@ -44,7 +44,7 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
         zIndex: isDragging ? 1000 : 1,
     };
 
-    let { totalReturn, totalValue, totalProfit } = calculateFundReturn(fund.holdings || [], fund.multiplier, usdRate, prevUsdRate)
+    let { totalReturn, totalValue, totalProfit } = calculateFundReturn(fund.holdings || [], fund.multiplier, usdRate, prevUsdRate, fund.ppfRate)
 
     // Prefer synced values from Firestore if available (Handles foreign stocks and Method B correctly)
     // BUT if we have live updates (_isLive flag), prefer the calculated values (which use live prices)
@@ -279,7 +279,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
         setActiveId(null);
     };
 
-    const calculateFundReturn = (portfolio, multiplier = 1, usdRate = null, prevUsdRate = null) => {
+    const calculateFundReturn = (portfolio, multiplier = 1, usdRate = null, prevUsdRate = null, ppfRate = 0) => {
         if (!portfolio || portfolio.length === 0) return { totalReturn: 0, totalValue: 0, totalProfit: 0 }
 
         const calculated = portfolio.map(item => {
@@ -310,9 +310,14 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
         const totalCost = calculated.reduce((sum, item) => sum + item.totalCost, 0)
         let totalProfit = totalValue - totalCost
 
-        // Apply Multiplier
-        if (multiplier && multiplier !== 1) {
-            totalProfit = totalProfit * multiplier
+        // Apply Multiplier and PPF Calculation
+        if (multiplier) {
+            const stockWeight = multiplier
+            const ppfWeight = 1 - stockWeight
+            const ppfProfit = totalCost * (ppfRate || 0) * ppfWeight
+
+            // totalProfit currently holds the raw stock profit
+            totalProfit = (totalProfit * stockWeight) + ppfProfit
         }
 
         const totalReturn = totalCost > 0 ? ((totalProfit / totalCost) * 100) : 0

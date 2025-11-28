@@ -180,11 +180,14 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
       // Update storage immediately to prevent other tabs/reloads from triggering
       localStorage.setItem(STORAGE_KEY, now.toString())
 
-      updateFundTotals(fundCode, {
-        totalValue,
-        totalProfit,
-        returnRate: totalReturnPercent
-      }).catch(console.error)
+      // Ensure no NaN/Infinity values are sent to Firestore
+      const safePayload = {
+        totalValue: Number.isFinite(totalValue) ? totalValue : 0,
+        totalProfit: Number.isFinite(totalProfit) ? totalProfit : 0,
+        returnRate: Number.isFinite(totalReturnPercent) ? totalReturnPercent : 0
+      }
+
+      updateFundTotals(fundCode, safePayload).catch(console.error)
         .finally(() => {
           isSyncingRef.current = false
         })
@@ -485,7 +488,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                             +%{formatNumber(Math.abs(item.returnRate), 2)}
                           </span>
                           <span className="font-mono font-medium text-muted-foreground text-center">
-                            %{formatNumber(impactPercent, 2)}
+                            %{Math.abs(impactPercent) < 0.01 && impactPercent !== 0 ? formatNumber(impactPercent, 4) : formatNumber(impactPercent, 2)}
                           </span>
                         </div>
                       )
@@ -553,7 +556,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                             %{formatNumber(Math.abs(item.returnRate), 2)}
                           </span>
                           <span className="font-mono font-medium text-muted-foreground text-center">
-                            %{formatNumber(impactPercent, 2)}
+                            %{Math.abs(impactPercent) < 0.01 && impactPercent !== 0 ? formatNumber(impactPercent, 4) : formatNumber(impactPercent, 2)}
                           </span>
                         </div>
                       )

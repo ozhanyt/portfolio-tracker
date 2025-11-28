@@ -128,9 +128,17 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   // Apply Multiplier and PPF Calculation
   // Total Profit = (Stock Profit * Multiplier) + (Total Cost * PPF Rate * (1 - Multiplier))
 
-  // Ensure multiplier is a number
-  const multiplierVal = parseFloat(multiplier) || 1
-  const ppfRateVal = parseFloat(ppfRate) || 0
+  // Ensure multiplier is a number (Handle Turkish comma)
+  const parseTurkishFloat = (val) => {
+    if (typeof val === 'number') return val
+    if (typeof val === 'string') {
+      return parseFloat(val.replace(',', '.'))
+    }
+    return 0
+  }
+
+  const multiplierVal = parseTurkishFloat(multiplier) || 1
+  const ppfRateVal = parseTurkishFloat(ppfRate) || 0
 
   if (multiplierVal) {
     const stockWeight = multiplierVal
@@ -246,7 +254,8 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const handleMultiplierChange = async (e) => {
     // If triggered by onBlur, e.target.value is used.
     // If triggered by Enter key (optional), same.
-    const val = parseFloat(multiplier) // Use state value which is updated by onChange
+    let valStr = String(multiplier).replace(',', '.')
+    const val = parseFloat(valStr)
 
     if (isNaN(val)) return
 
@@ -262,7 +271,8 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   }
 
   const handlePpfRateChange = async (e) => {
-    const val = parseFloat(ppfRate)
+    let valStr = String(ppfRate).replace(',', '.')
+    const val = parseFloat(valStr)
 
     if (isNaN(val)) return
 
@@ -578,16 +588,18 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
             </CardHeader>
             <CardContent className="text-xs font-mono space-y-1">
               <p>Multiplier (State): {multiplier} ({typeof multiplier})</p>
+              <p>Multiplier (Parsed): {multiplierVal}</p>
               <p>Total Value: {totalValue}</p>
               <p>Total Cost: {totalCost}</p>
               <p>Total Profit: {totalProfit}</p>
-              <p>PPF Rate: {ppfRate}</p>
+              <p>PPF Rate (State): {ppfRate}</p>
+              <p>PPF Rate (Parsed): {ppfRateVal}</p>
               <p>Sample Impact Calculation (Top Gainer):</p>
               {finalData.length > 0 && (
                 <p>
                   {finalData[0].code}: Profit={finalData[0].profitTL},
-                  Impact=({finalData[0].profitTL} * {multiplier}) / {totalCost} * 100 =
-                  {(finalData[0].profitTL * multiplier / totalCost * 100).toFixed(4)}%
+                  Impact=({finalData[0].profitTL} * {multiplierVal}) / {totalCost} * 100 =
+                  {(finalData[0].profitTL * multiplierVal / totalCost * 100).toFixed(4)}%
                 </p>
               )}
             </CardContent>

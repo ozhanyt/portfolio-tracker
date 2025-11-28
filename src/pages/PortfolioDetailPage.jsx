@@ -127,10 +127,15 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
   // Apply Multiplier and PPF Calculation
   // Total Profit = (Stock Profit * Multiplier) + (Total Cost * PPF Rate * (1 - Multiplier))
-  if (multiplier) {
-    const stockWeight = multiplier
+
+  // Ensure multiplier is a number
+  const multiplierVal = parseFloat(multiplier) || 1
+  const ppfRateVal = parseFloat(ppfRate) || 0
+
+  if (multiplierVal) {
+    const stockWeight = multiplierVal
     const ppfWeight = 1 - stockWeight
-    const ppfProfit = totalCost * (ppfRate || 0) * ppfWeight
+    const ppfProfit = totalCost * ppfRateVal * ppfWeight
 
     // totalProfit currently holds the raw stock profit
     totalProfit = (totalProfit * stockWeight) + ppfProfit
@@ -457,14 +462,14 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                     .slice(0, 5)
                     .map(item => {
                       const impactPercent = totalCost >
-                        0 ? ((item.profitTL * multiplier) / totalCost) * 100
+                        0 ? ((item.profitTL * multiplierVal) / totalCost) * 100
                         : 0;
 
                       return (
                         <div key={item.code} className="grid grid-cols-4 items-center text-xs sm:text-sm p-2 hover:bg-muted/50 rounded-md transition-colors gap-2">
                           <span className="font-bold text-center whitespace-nowrap overflow-hidden text-ellipsis" title={item.code}>{item.code}</span>
                           <span className="font-mono font-medium text-green-600 text-center truncate">
-                            +{formatCurrency(item.profitTL * multiplier)}
+                            +{formatCurrency(item.profitTL * multiplierVal)}
                           </span>
                           <span className="font-bold text-green-600 bg-green-50 dark:bg-green-900/10 px-1 py-0.5 rounded text-[9px] sm:text-xs text-center">
                             +%{formatNumber(Math.abs(item.returnRate), 2)}
@@ -524,14 +529,14 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                     .slice(0, 5)
                     .map(item => {
                       const impactPercent = totalCost > 0
-                        ? ((item.profitTL * multiplier) / totalCost) * 100
+                        ? ((item.profitTL * multiplierVal) / totalCost) * 100
                         : 0;
 
                       return (
                         <div key={item.code} className="grid grid-cols-4 items-center text-xs sm:text-sm p-2 hover:bg-muted/50 rounded-md transition-colors gap-2">
                           <span className="font-bold text-center whitespace-nowrap overflow-hidden text-ellipsis" title={item.code}>{item.code}</span>
                           <span className={cn("font-mono font-medium text-center truncate", item.profitTL < 0 ? "text-red-600" : "text-gray-600")}>
-                            {formatCurrency(item.profitTL * multiplier)}
+                            {formatCurrency(item.profitTL * multiplierVal)}
                           </span>
                           <span className={cn("font-bold px-1 py-0.5 rounded text-[9px] sm:text-xs text-center",
                             item.returnRate < 0 ? "text-red-600 bg-red-50 dark:bg-red-900/10" : "text-gray-600 bg-gray-100")}>

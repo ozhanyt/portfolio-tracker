@@ -23,6 +23,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const [editingStock, setEditingStock] = useState(null)
 
   const latestPricesRef = useRef({})
+  const hasFreshDataRef = useRef(false) // Track if we have fresh local calculations
 
   // Subscribe to fund data
   useEffect(() => {
@@ -47,7 +48,12 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
           return item
         })
 
-        setPortfolio(mergedHoldings)
+        // Only update portfolio if we don't have fresh local data
+        // This prevents Firestore updates from overwriting fresh calculations
+        if (!hasFreshDataRef.current) {
+          setPortfolio(mergedHoldings)
+        }
+
         setMultiplier(data.multiplier || 1)
         setPpfRate(data.ppfRate || 0)
       } else {
@@ -80,6 +86,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
       return item
     })
 
+    hasFreshDataRef.current = true // Mark that we have fresh local data
     setPortfolio(newPortfolio)
   }
 

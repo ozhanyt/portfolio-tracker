@@ -71,23 +71,26 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
       latestPricesRef.current[p.code] = p
     })
 
-    const newPortfolio = portfolio.map(item => {
-      const priceData = prices.find(p => p.code === item.code)
-      if (priceData) {
-        return {
-          ...item,
-          currentPrice: priceData.currentPrice,
-          prevClose: priceData.prevClose,
-          quantity: priceData.quantity || item.quantity, // Sync quantity from Sheet API
-          cost: priceData.prevClose, // Sync cost with prevClose for daily tracking
-          lastRolloverDate: priceData.lastRolloverDate || item.lastRolloverDate || null // Update rollover date if present
+    // Use functional update to ensure we work with the most recent state
+    setPortfolio(currentPortfolio => {
+      const newPortfolio = currentPortfolio.map(item => {
+        const priceData = prices.find(p => p.code === item.code)
+        if (priceData) {
+          return {
+            ...item,
+            currentPrice: priceData.currentPrice,
+            prevClose: priceData.prevClose,
+            quantity: priceData.quantity || item.quantity, // Sync quantity from Sheet API
+            cost: priceData.prevClose, // Sync cost with prevClose for daily tracking
+            lastRolloverDate: priceData.lastRolloverDate || item.lastRolloverDate || null // Update rollover date if present
+          }
         }
-      }
-      return item
-    })
+        return item
+      })
 
-    hasFreshDataRef.current = true // Mark that we have fresh local data
-    setPortfolio(newPortfolio)
+      hasFreshDataRef.current = true // Mark that we have fresh local data
+      return newPortfolio
+    })
   }
 
   const { lastUpdate, isUpdating, error, usdRate, prevUsdRate } = useStockPriceUpdates(portfolio, handlePriceUpdate, 60000)

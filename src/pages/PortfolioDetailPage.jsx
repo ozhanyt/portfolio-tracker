@@ -25,6 +25,11 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const latestPricesRef = useRef({})
   const hasFreshDataRef = useRef(false) // Track if we have fresh local calculations
 
+  // Helper to normalize stock codes (handle " FONU" suffix mismatch)
+  const normalizeCode = (code) => {
+    return String(code).trim().replace(/ FONU$/i, '').toUpperCase()
+  }
+
   // Subscribe to fund data
   useEffect(() => {
     const unsubscribe = subscribeToFund(fundCode, (data) => {
@@ -34,7 +39,14 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
         // Merge incoming Firestore holdings with locally cached prices
         // This prevents the UI from reverting to stale prices when Firestore updates (e.g. after saving totals)
         const mergedHoldings = (data.holdings || []).map(item => {
-          const cachedPrice = latestPricesRef.current[item.code]
+          // Try exact match first, then normalized match
+          let cachedPrice = latestPricesRef.current[item.code]
+          if (!cachedPrice) {
+            const normalizedItemCode = normalizeCode(item.code)
+            const matchKey = Object.keys(latestPricesRef.current).find(key => normalizeCode(key) === normalizedItemCode)
+            if (matchKey) cachedPrice = latestPricesRef.current[matchKey]
+          }
+
           if (cachedPrice) {
             return {
               ...item,
@@ -51,7 +63,10 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
         // Only update portfolio if we don't have fresh local data
         // This prevents Firestore updates from overwriting fresh calculations
         if (!hasFreshDataRef.current) {
+          console.log("🔥 Firestore update applied (No fresh data)")
           setPortfolio(mergedHoldings)
+        } else {
+          console.log("🛡️ Firestore update SKIPPED (Has fresh data)")
         }
 
         setMultiplier(data.multiplier || 1)
@@ -66,6 +81,8 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
   // Auto-update stock prices
   const handlePriceUpdate = async (prices) => {
+    console.log("💰 Prices fetched:", prices.length)
+
     // Update the ref with new prices
     prices.forEach(p => {
       latestPricesRef.current[p.code] = p
@@ -74,7 +91,13 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     // Use functional update to ensure we work with the most recent state
     setPortfolio(currentPortfolio => {
       const newPortfolio = currentPortfolio.map(item => {
-        const priceData = prices.find(p => p.code === item.code)
+        // Try exact match first, then normalized match
+        let priceData = prices.find(p => p.code === item.code)
+        if (!priceData) {
+          const normalizedItemCode = normalizeCode(item.code)
+          priceData = prices.find(p => normalizeCode(p.code) === normalizedItemCode)
+        }
+
         if (priceData) {
           return {
             ...item,

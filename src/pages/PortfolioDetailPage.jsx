@@ -220,7 +220,8 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
         returnRate: Number.isFinite(totalReturnPercent) ? totalReturnPercent : 0
       }
 
-      updateFundTotals(fundCode, safePayload).catch(console.error)
+      // Also save the current portfolio (holdings) to persist updated prices
+      updateFundTotals(fundCode, safePayload, portfolio).catch(console.error)
         .finally(() => {
           isSyncingRef.current = false
         })

@@ -88,15 +88,21 @@ export async function updateFundName(fundId, name) {
     })
 }
 
-// Update fund totals (Calculated values)
-export async function updateFundTotals(fundId, totals) {
+// Update fund totals (Calculated values) and optionally holdings
+export async function updateFundTotals(fundId, totals, holdings = null) {
     const fundRef = doc(db, FUNDS_COLLECTION, fundId)
-    await updateDoc(fundRef, {
+    const updateData = {
         totalValue: totals.totalValue,
         totalProfit: totals.totalProfit,
         returnRate: totals.returnRate,
         lastUpdated: serverTimestamp()
-    })
+    }
+
+    if (holdings) {
+        updateData.holdings = holdings
+    }
+
+    await updateDoc(fundRef, updateData)
 }
 
 // Update funds order (Batch update)

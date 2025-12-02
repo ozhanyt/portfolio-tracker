@@ -192,7 +192,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     const STORAGE_KEY = `last_fund_update_${fundCode}`
     const lastUpdate = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10)
     const timeSinceLastUpdate = now - lastUpdate
-    const MIN_UPDATE_INTERVAL = 5 * 60 * 1000 // 5 minutes throttle
+    const MIN_UPDATE_INTERVAL = 30 * 1000 // 30 seconds throttle
 
     // Check if values are significantly different
     const isValueDifferent = fundData && (

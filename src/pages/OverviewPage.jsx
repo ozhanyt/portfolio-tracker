@@ -44,7 +44,18 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
         zIndex: isDragging ? 1000 : 1,
     };
 
+    console.log(`📊 OVERVIEW calculating for ${fund.id}:`, {
+        holdingsCount: fund.holdings?.length,
+        firstHolding: fund.holdings?.[0],
+        multiplier: fund.multiplier,
+        ppfRate: fund.ppfRate,
+        cachedTotal: fund.totalValue,
+        cachedProfit: fund.totalProfit
+    })
+
     let { totalReturn, totalValue, totalProfit } = calculateFundReturn(fund.holdings || [], fund.multiplier, usdRate, prevUsdRate, fund.ppfRate)
+
+    console.log(`💰 OVERVIEW calculated for ${fund.id}:`, { totalValue, totalProfit, totalReturn })
 
     // ALWAYS use calculated values from holdings (source of truth)
     // Removed cached totals fallback to prevent stale data issues

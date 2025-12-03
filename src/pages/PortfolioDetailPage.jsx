@@ -45,6 +45,8 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
         console.log(`📥 FIRESTORE DATA for ${fundCode}:`, {
           holdingsCount: data.holdings?.length,
           firstHolding: data.holdings?.[0],
+          firstHoldingDetails: `${data.holdings?.[0]?.code} x ${data.holdings?.[0]?.quantity}`,
+          dstkf: data.holdings?.find(h => h.code === 'DSTKF'),
           totalValue: data.totalValue,
           totalProfit: data.totalProfit
         })

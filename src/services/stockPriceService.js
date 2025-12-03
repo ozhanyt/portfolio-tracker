@@ -213,26 +213,5 @@ export async function fetchFundHoldings(fundCode) {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-
-        const data = await response.json();
-
-        // Ensure data is an array
-        if (Array.isArray(data)) {
-            return data.map(item => ({
-                code: item.symbol,
-                quantity: 0, // Sheet API doesn't return quantity, user must set it or we default to 0
-                cost: item.price, // Use current price as initial cost
-                currentPrice: item.price,
-                prevClose: item.price / (1 + (item.changePercent / 100)),
-                changePercent: item.changePercent,
-                isForeign: false, // Default to false, user can update
-                isManual: false
-            }));
-        }
-
-        return [];
-    } catch (error) {
-        console.error(`Error fetching holdings for ${fundCode}:`, error);
-        return [];
     }
 }

@@ -100,8 +100,15 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     console.log(`💰 PRICE UPDATE for ${fundCode}:`, prices.length, 'prices')
 
     // CRITICAL: Filter to only use prices for current fund!
-    const fundPrices = prices.filter(p => !p.fund || p.fund === fundCode)
+    // Normalize for case-insensitive comparison and trim whitespace
+    const normalizedFundCode = fundCode.trim().toUpperCase()
+    const fundPrices = prices.filter(p => {
+      if (!p.fund) return true // Include prices without fund field (backwards compat)
+      const normalizedPriceFund = String(p.fund).trim().toUpperCase()
+      return normalizedPriceFund === normalizedFundCode
+    })
     console.log(`   🔍 Filtered to ${fundPrices.length} prices for fund ${fundCode}`)
+    console.log(`   📋 Sample incoming price funds:`, prices.slice(0, 5).map(p => `${p.code} (fund: "${p.fund}")`))
 
     const dstkfInPrices = fundPrices.filter(p => p.code === 'DSTKF')
     console.log(`   DSTKF in filtered prices:`, dstkfInPrices.map(p => `${p.code} x ${p.quantity} (fund: ${p.fund || 'N/A'})`))

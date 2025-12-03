@@ -362,26 +362,15 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
         return
       }
 
-      // Merge with existing holdings to preserve quantities if code matches
+      // DON'T merge - Use fresh sheet data directly with only flags preserved
       const mergedHoldings = sheetHoldings.map(sheetItem => {
         const existingItem = portfolio.find(p => p.code === sheetItem.code)
-        if (existingItem) {
-          return {
-            ...sheetItem,
-            quantity: existingItem.quantity ?? 0, // Preserve quantity
-            cost: existingItem.cost ?? 0, // Preserve cost
-            isForeign: existingItem.isForeign ?? false,
-            isManual: existingItem.isManual ?? false,
-            lastRolloverDate: existingItem.lastRolloverDate ?? null
-          }
-        }
+        // Only preserve user-set flags, everything else comes from sheet
         return {
           ...sheetItem,
-          quantity: sheetItem.quantity ?? 0,
-          cost: sheetItem.cost ?? 0,
-          isForeign: sheetItem.isForeign ?? false,
-          isManual: sheetItem.isManual ?? false,
-          lastRolloverDate: null
+          isForeign: existingItem?.isForeign ?? false,
+          isManual: existingItem?.isManual ?? false,
+          lastRolloverDate: existingItem?.lastRolloverDate ?? null
         }
       })
 

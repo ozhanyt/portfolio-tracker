@@ -46,13 +46,8 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
 
     let { totalReturn, totalValue, totalProfit } = calculateFundReturn(fund.holdings || [], fund.multiplier, usdRate, prevUsdRate, fund.ppfRate)
 
-    // Prefer synced values from Firestore if available (Handles foreign stocks and Method B correctly)
-    // BUT if we have live updates (_isLive flag), prefer the calculated values (which use live prices)
-    if (!fund._isLive && fund.totalValue !== undefined && fund.totalProfit !== undefined && fund.returnRate !== undefined) {
-        totalValue = fund.totalValue
-        totalProfit = fund.totalProfit
-        totalReturn = fund.returnRate
-    }
+    // ALWAYS use calculated values from holdings (source of truth)
+    // Removed cached totals fallback to prevent stale data issues
 
     const [isEditing, setIsEditing] = useState(false)
     const [editName, setEditName] = useState(fund.name)

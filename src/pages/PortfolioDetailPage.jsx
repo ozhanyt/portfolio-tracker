@@ -379,15 +379,12 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
         }
       })
 
-      // Update Firestore
-      await updateFundTotals(fundCode, {
-        totalValue,
-        totalProfit,
-        returnRate: totalReturnPercent
-      }, mergedHoldings)
+      // Update Firestore - Don't send totalValue/totalProfit as they will be recalculated
+      // from the new holdings after the page reloads
+      await updateFundHoldings(fundCode, mergedHoldings)
 
-      alert(`${mergedHoldings.length} hisse başarıyla güncellendi.`)
-      // Force reload to see changes
+      alert(`${mergedHoldings.length} hisse başarıyla güncellendi. Sayfa yenilenecek.`)
+      // Force reload to recalculate totals with new holdings
       window.location.reload()
 
     } catch (error) {

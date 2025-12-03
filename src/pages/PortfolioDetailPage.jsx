@@ -346,13 +346,21 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
         if (existingItem) {
           return {
             ...sheetItem,
-            quantity: existingItem.quantity, // Preserve quantity
-            cost: existingItem.cost, // Preserve cost
-            isForeign: existingItem.isForeign,
-            isManual: existingItem.isManual
+            quantity: existingItem.quantity ?? 0, // Preserve quantity
+            cost: existingItem.cost ?? 0, // Preserve cost
+            isForeign: existingItem.isForeign ?? false,
+            isManual: existingItem.isManual ?? false,
+            lastRolloverDate: existingItem.lastRolloverDate ?? null
           }
         }
-        return sheetItem
+        return {
+          ...sheetItem,
+          quantity: sheetItem.quantity ?? 0,
+          cost: sheetItem.cost ?? 0,
+          isForeign: sheetItem.isForeign ?? false,
+          isManual: sheetItem.isManual ?? false,
+          lastRolloverDate: null
+        }
       })
 
       // Update Firestore

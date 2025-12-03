@@ -7,7 +7,7 @@ import { fetchStockPrices, fetchUSDTRYRate } from '@/services/stockPriceService'
  * @param {Function} onUpdate - Callback function to update prices
  * @param {number} intervalMs - Update interval in milliseconds (default: 300000 = 5 minutes)
  */
-export function useStockPriceUpdates(portfolio, onUpdate, intervalMs = 900000) {
+export function useStockPriceUpdates(portfolio, onUpdate, fundCode, intervalMs = 900000) {
     const [lastUpdate, setLastUpdate] = useState(null)
     const [isUpdating, setIsUpdating] = useState(false)
     const [error, setError] = useState(null)
@@ -56,15 +56,15 @@ export function useStockPriceUpdates(portfolio, onUpdate, intervalMs = 900000) {
 
                 let allPrices = []
 
-                // Fetch local stocks
+                // Fetch local stocks - PASS FUNDCODE!
                 if (localSymbols.length > 0) {
-                    const localPrices = await fetchStockPrices(localSymbols)
+                    const localPrices = await fetchStockPrices(localSymbols, { fundCode })
                     allPrices = [...allPrices, ...localPrices]
                 }
 
                 // Fetch foreign stocks
                 if (foreignSymbols.length > 0) {
-                    const foreignPrices = await fetchStockPrices(foreignSymbols, { isForeign: true })
+                    const foreignPrices = await fetchStockPrices(foreignSymbols, { isForeign: true, fundCode })
 
                     allPrices = [...allPrices, ...foreignPrices]
                 }

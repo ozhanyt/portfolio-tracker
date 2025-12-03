@@ -159,7 +159,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     })
   }
 
-  const { lastUpdate, isUpdating, error, usdRate, prevUsdRate } = useStockPriceUpdates(portfolio, handlePriceUpdate, 60000)
+  const { lastUpdate, isUpdating, error, usdRate, prevUsdRate } = useStockPriceUpdates(portfolio, handlePriceUpdate, fundCode, 60000)
 
   // Calculate portfolio values
   const calculatedPortfolio = portfolio.map(item => {

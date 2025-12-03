@@ -116,8 +116,12 @@ export async function fetchStockPrices(symbols, options = {}) {
 
     try {
         const symbolsParam = symbolsToFetch.join(',');
-        // Cache busting için timestamp ekle
-        const url = `${SHEET_API_URL}?symbols=${encodeURIComponent(symbolsParam)}&t=${Date.now()}`;
+        // Build URL with fundCode if provided
+        let url = `${SHEET_API_URL}?symbols=${encodeURIComponent(symbolsParam)}&t=${Date.now()}`;
+        if (options.fundCode) {
+            url += `&fund=${encodeURIComponent(options.fundCode)}`;
+        }
+        console.log(`🌐 API Request:`, { symbols: symbolsToFetch, fundCode: options.fundCode, url })
 
         const response = await fetch(url);
 

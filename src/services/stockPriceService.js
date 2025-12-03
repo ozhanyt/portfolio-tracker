@@ -136,20 +136,6 @@ export async function fetchStockPrices(symbols, options = {}) {
 
     if (symbolsToFetch.length === 0) {
         return cachedResults;
-    }
-
-    try {
-        const symbolsParam = symbolsToFetch.join(',');
-        // REVERTED: Do NOT send &fund= parameter as it breaks the API
-        const url = `${SHEET_API_URL}?symbols=${encodeURIComponent(symbolsParam)}&t=${Date.now()}`;
-
-        console.log(`🌐 API Request:`, { symbols: symbolsToFetch, url })
-
-        const response = await fetch(url);
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
 
         const results = await response.json();
 

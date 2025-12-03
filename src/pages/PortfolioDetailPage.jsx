@@ -96,8 +96,9 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   }, [fundCode, navigate])
 
   // Auto-update stock prices
+  // Auto-update stock prices
   const handlePriceUpdate = async (prices) => {
-    console.log(`💰 PRICE UPDATE for ${fundCode}:`, prices.length, 'prices')
+    // console.log(`💰 PRICE UPDATE for ${fundCode}:`, prices.length, 'prices')
 
     // CRITICAL: Filter to only use prices for current fund!
     // Normalize for case-insensitive comparison and trim whitespace
@@ -107,11 +108,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
       const normalizedPriceFund = String(p.fund).trim().toUpperCase()
       return normalizedPriceFund === normalizedFundCode
     })
-    console.log(`   🔍 Filtered to ${fundPrices.length} prices for fund ${fundCode}`)
-    console.log(`   📋 Sample incoming price funds:`, prices.slice(0, 5).map(p => `${p.code} (fund: "${p.fund}")`))
-
-    const dstkfInPrices = fundPrices.filter(p => p.code === 'DSTKF')
-    console.log(`   DSTKF in filtered prices:`, dstkfInPrices.map(p => `${p.code} x ${p.quantity} (fund: ${p.fund || 'N/A'})`))
+    // console.log(`   🔍 Filtered to ${fundPrices.length} prices for fund ${fundCode}`)
 
     // Update the ref with FILTERED prices
     fundPrices.forEach(p => {
@@ -120,10 +117,6 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
     // Use functional update to ensure we work with the most recent state
     setPortfolio(currentPortfolio => {
-      console.log(`📊 Current portfolio before price update:`, currentPortfolio.length, 'items')
-      const dstkfBefore = currentPortfolio.find(item => item.code === 'DSTKF')
-      console.log(`   DSTKF before update:`, dstkfBefore ? `${dstkfBefore.code} x ${dstkfBefore.quantity}` : 'not found')
-
       const newPortfolio = currentPortfolio.map(item => {
         // Try exact match first, then normalized match - USE FILTERED PRICES!
         let priceData = fundPrices.find(p => p.code === item.code)
@@ -133,26 +126,18 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
         }
 
         if (priceData) {
-          if (item.code === 'DSTKF') {
-            console.log(`   🔍 DSTKF matched with price data:`, priceData)
-            console.log(`   ✅ Using TLY's DSTKF (fund filter working!)`)
-          }
           return {
             ...item,
             currentPrice: priceData.currentPrice,
             prevClose: priceData.prevClose,
             // DON'T sync quantity - price API returns multi-fund data!
-            // quantity: priceData.quantity || item.quantity, ← REMOVED!
+            // quantity: priceData.quantity || item.quantity,
             cost: priceData.prevClose, // Sync cost with prevClose for daily tracking
             lastRolloverDate: priceData.lastRolloverDate || item.lastRolloverDate || null // Update rollover date if present
           }
         }
         return item
       })
-
-      const dstkfAfter = newPortfolio.find(item => item.code === 'DSTKF')
-      console.log(`✨ NEW portfolio after price update:`, newPortfolio.length, 'items')
-      console.log(`   DSTKF after update:`, dstkfAfter ? `${dstkfAfter.code} x ${dstkfAfter.quantity}` : 'not found')
 
       hasFreshDataRef.current = true // Mark that we have fresh local data
       return newPortfolio

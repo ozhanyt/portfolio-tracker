@@ -45,14 +45,14 @@ export function useStockPriceUpdates(portfolio, onUpdate, fundCode, intervalMs =
 
             try {
                 let allPrices = []
+                let hasSymbolsToFetch = false
 
                 // STRATEGY 1: If fundCode is provided, fetch ALL holdings for that fund
-                // This is more reliable for fund-specific views and avoids cross-fund pollution
-                // It uses the same endpoint as "Sync from Sheet"
                 if (fundCode) {
-                    console.log(`📡 Fetching price updates via fetchFundHoldings for ${fundCode}`)
+                    // console.log(`📡 Fetching price updates via fetchFundHoldings for ${fundCode}`)
                     const fundHoldings = await fetchFundHoldings(fundCode)
                     allPrices = fundHoldings
+                    hasSymbolsToFetch = true
                 }
                 // STRATEGY 2: If no fundCode (e.g. Overview page), fetch by symbols
                 else {
@@ -66,6 +66,8 @@ export function useStockPriceUpdates(portfolio, onUpdate, fundCode, intervalMs =
                         .filter(item => !item.isManual && item.isForeign)
                         .map(item => item.code)
                     )]
+
+                    hasSymbolsToFetch = localSymbols.length > 0 || foreignSymbols.length > 0
 
                     // Fetch local stocks
                     if (localSymbols.length > 0) {
@@ -83,7 +85,7 @@ export function useStockPriceUpdates(portfolio, onUpdate, fundCode, intervalMs =
                 if (allPrices.length > 0) {
                     onUpdate(allPrices)
                     setLastUpdate(new Date())
-                } else if (localSymbols.length > 0 || foreignSymbols.length > 0) {
+                } else if (hasSymbolsToFetch) {
                     setError('Fiyat güncellenemedi')
                 }
             } catch (err) {

@@ -58,16 +58,10 @@ export function subscribeToFund(fundId, callback) {
 
 // Update fund holdings
 export async function updateFundHoldings(fundId, holdings) {
-    console.log(`🔧 updateFundHoldings called for: ${fundId}`, {
-        holdingsCount: holdings.length,
-        firstHolding: holdings[0],
-        dstkf: holdings.find(h => h.code === 'DSTKF')
-    })
     const fundRef = doc(db, FUNDS_COLLECTION, fundId)
     await updateDoc(fundRef, {
         holdings
     })
-    console.log(`✅ updateFundHoldings completed for: ${fundId}`)
 }
 
 // Update fund multiplier

@@ -98,11 +98,16 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   // Auto-update stock prices
   const handlePriceUpdate = async (prices) => {
     console.log(`💰 PRICE UPDATE for ${fundCode}:`, prices.length, 'prices')
-    const dstkfInPrices = prices.filter(p => p.code === 'DSTKF')
-    console.log(`   DSTKF in incoming prices:`, dstkfInPrices.map(p => `${p.code} x ${p.quantity} (fund: ${p.fund || 'N/A'})`))
 
-    // Update the ref with new prices
-    prices.forEach(p => {
+    // CRITICAL: Filter to only use prices for current fund!
+    const fundPrices = prices.filter(p => !p.fund || p.fund === fundCode)
+    console.log(`   🔍 Filtered to ${fundPrices.length} prices for fund ${fundCode}`)
+
+    const dstkfInPrices = fundPrices.filter(p => p.code === 'DSTKF')
+    console.log(`   DSTKF in filtered prices:`, dstkfInPrices.map(p => `${p.code} x ${p.quantity} (fund: ${p.fund || 'N/A'})`))
+
+    // Update the ref with FILTERED prices
+    fundPrices.forEach(p => {
       latestPricesRef.current[p.code] = p
     })
 
@@ -113,17 +118,17 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
       console.log(`   DSTKF before update:`, dstkfBefore ? `${dstkfBefore.code} x ${dstkfBefore.quantity}` : 'not found')
 
       const newPortfolio = currentPortfolio.map(item => {
-        // Try exact match first, then normalized match
-        let priceData = prices.find(p => p.code === item.code)
+        // Try exact match first, then normalized match - USE FILTERED PRICES!
+        let priceData = fundPrices.find(p => p.code === item.code)
         if (!priceData) {
           const normalizedItemCode = normalizeCode(item.code)
-          priceData = prices.find(p => normalizeCode(p.code) === normalizedItemCode)
+          priceData = fundPrices.find(p => normalizeCode(p.code) === normalizedItemCode)
         }
 
         if (priceData) {
           if (item.code === 'DSTKF') {
             console.log(`   🔍 DSTKF matched with price data:`, priceData)
-            console.log(`   ⚠️ NOT syncing quantity from price API (prevents cross-fund pollution)`)
+            console.log(`   ✅ Using TLY's DSTKF (fund filter working!)`)
           }
           return {
             ...item,

@@ -136,6 +136,20 @@ export async function fetchStockPrices(symbols, options = {}) {
 
     if (symbolsToFetch.length === 0) {
         return cachedResults;
+    }
+
+    try {
+        const symbolsParam = symbolsToFetch.join(',');
+        // REVERTED: Do NOT send &fund= parameter as it breaks the API
+        const url = `${SHEET_API_URL}?symbols=${encodeURIComponent(symbolsParam)}&t=${Date.now()}`;
+
+        // console.log(`🌐 API Request:`, { symbols: symbolsToFetch, url })
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
         const results = await response.json();
 
@@ -149,16 +163,6 @@ export async function fetchStockPrices(symbols, options = {}) {
         } else {
             console.error('API response is not an array:', results);
         }
-
-        // If we requested specific fund, we might want to filter results here too?
-        // But the caller does filtering. 
-        // However, if we fetched from API, we got ALL funds.
-        // We should return all of them so the caller can filter.
-        // BUT, we need to make sure we don't return duplicates if we mix cached and fresh?
-
-        // Actually, if we found some in cache (specific to fund), we added to cachedResults.
-        // Now we fetched the rest.
-        // The API might return multiple entries for one symbol (e.g. DSTKF TLY and DSTKF SSS).
 
         const finalResults = [...cachedResults];
         if (Array.isArray(results)) {
@@ -269,6 +273,7 @@ export async function fetchFundHoldings(fundCode) {
                     currentPrice: currentPrice,
                     prevClose: prevClose,
                     changePercent: changePercent,
+                    updateTime: item.updateTime,
                     isForeign: false,
                     isManual: false
                 };

@@ -11,10 +11,26 @@ const SHEET_API_URL = import.meta.env.VITE_SHEET_API_URL;
 const CACHE_DURATION = 1 * 60 * 1000;
 const CACHE_PREFIX = 'portfolio_cache_';
 
-function getCachedPrice(symbol) {
+function getCacheKey(symbol, fundCode) {
+    if (fundCode) {
+        return `${CACHE_PREFIX}${symbol}_${fundCode}`;
+    }
+    return `${CACHE_PREFIX}${symbol}`;
+}
+
+function getCachedPrice(symbol, fundCode) {
     try {
-        const item = localStorage.getItem(CACHE_PREFIX + symbol);
+        // Try specific fund cache first
+        let key = getCacheKey(symbol, fundCode);
+        let item = localStorage.getItem(key);
+
+        // If not found and no fundCode specified, try generic cache (legacy)
+        if (!item && !fundCode) {
+            item = localStorage.getItem(`${CACHE_PREFIX}${symbol}`);
+        }
+
         if (!item) return null;
+
         const cached = JSON.parse(item);
         if (Date.now() - cached.timestamp < CACHE_DURATION) {
             return cached.data;
@@ -27,19 +43,27 @@ function getCachedPrice(symbol) {
 
 function setCachedPrice(symbol, data) {
     try {
+        // Use fund-specific key if fund is present in data
+        const key = getCacheKey(symbol, data.fund);
+
         const cacheItem = {
             timestamp: Date.now(),
             data
         };
-        localStorage.setItem(CACHE_PREFIX + symbol, JSON.stringify(cacheItem));
+        localStorage.setItem(key, JSON.stringify(cacheItem));
+
+        // Also save to generic key if it's the first one or for backward compat
+        // But be careful not to overwrite if we want to support multi-fund
+        // For now, let's just rely on specific keys if 'fund' is present
     } catch (e) {
         // Ignore
     }
 }
 
-function getStalePrice(symbol) {
+function getStalePrice(symbol, fundCode) {
     try {
-        const item = localStorage.getItem(CACHE_PREFIX + symbol);
+        const key = getCacheKey(symbol, fundCode);
+        const item = localStorage.getItem(key);
         if (!item) return null;
         return JSON.parse(item).data;
     } catch (e) {
@@ -51,7 +75,7 @@ function getStalePrice(symbol) {
  * Tek bir hisse için fiyat getir
  */
 export async function fetchStockPrice(symbol, options = {}) {
-    const cached = getCachedPrice(symbol);
+    const cached = getCachedPrice(symbol, options.fundCode);
     if (cached) return cached;
 
     try {
@@ -69,7 +93,7 @@ export async function fetchStockPrice(symbol, options = {}) {
             setCachedPrice(symbol, data);
             return data;
         } else {
-            const stale = getStalePrice(symbol);
+            const stale = getStalePrice(symbol, options.fundCode);
             if (stale) return stale;
 
             return {
@@ -81,7 +105,7 @@ export async function fetchStockPrice(symbol, options = {}) {
     } catch (error) {
         console.error(`Error fetching price for ${symbol}:`, error);
 
-        const stale = getStalePrice(symbol);
+        const stale = getStalePrice(symbol, options.fundCode);
         if (stale) return stale;
 
         return {
@@ -102,7 +126,7 @@ export async function fetchStockPrices(symbols, options = {}) {
     const symbolsToFetch = [];
 
     symbols.forEach(symbol => {
-        const cached = getCachedPrice(symbol);
+        const cached = getCachedPrice(symbol, options.fundCode);
         if (cached) {
             cachedResults.push(cached);
         } else {
@@ -116,12 +140,10 @@ export async function fetchStockPrices(symbols, options = {}) {
 
     try {
         const symbolsParam = symbolsToFetch.join(',');
-        // Build URL with fundCode if provided
-        let url = `${SHEET_API_URL}?symbols=${encodeURIComponent(symbolsParam)}&t=${Date.now()}`;
-        if (options.fundCode) {
-            url += `&fund=${encodeURIComponent(options.fundCode)}`;
-        }
-        console.log(`🌐 API Request:`, { symbols: symbolsToFetch, fundCode: options.fundCode, url })
+        // REVERTED: Do NOT send &fund= parameter as it breaks the API
+        const url = `${SHEET_API_URL}?symbols=${encodeURIComponent(symbolsParam)}&t=${Date.now()}`;
+
+        console.log(`🌐 API Request:`, { symbols: symbolsToFetch, url })
 
         const response = await fetch(url);
 
@@ -132,19 +154,38 @@ export async function fetchStockPrices(symbols, options = {}) {
         const results = await response.json();
 
         // Cache'le
-        results.forEach(result => {
-            if (result.success) {
-                setCachedPrice(result.code, result);
-            }
-        });
+        if (Array.isArray(results)) {
+            results.forEach(result => {
+                if (result.success) {
+                    setCachedPrice(result.code, result);
+                }
+            });
+        } else {
+            console.error('API response is not an array:', results);
+        }
 
-        return [...cachedResults, ...results].filter(r => r.success);
+        // If we requested specific fund, we might want to filter results here too?
+        // But the caller does filtering. 
+        // However, if we fetched from API, we got ALL funds.
+        // We should return all of them so the caller can filter.
+        // BUT, we need to make sure we don't return duplicates if we mix cached and fresh?
+
+        // Actually, if we found some in cache (specific to fund), we added to cachedResults.
+        // Now we fetched the rest.
+        // The API might return multiple entries for one symbol (e.g. DSTKF TLY and DSTKF SSS).
+
+        const finalResults = [...cachedResults];
+        if (Array.isArray(results)) {
+            finalResults.push(...results.filter(r => r.success));
+        }
+
+        return finalResults;
 
     } catch (error) {
         console.error('Batch fetch error:', error);
 
         const fallbackResults = symbolsToFetch.map(s => {
-            const stale = getStalePrice(s);
+            const stale = getStalePrice(s, options.fundCode);
             if (stale) return stale;
             return { code: s, success: false, error: error.message };
         });

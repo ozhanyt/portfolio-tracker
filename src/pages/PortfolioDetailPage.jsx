@@ -123,12 +123,14 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
         if (priceData) {
           if (item.code === 'DSTKF') {
             console.log(`   🔍 DSTKF matched with price data:`, priceData)
+            console.log(`   ⚠️ NOT syncing quantity from price API (prevents cross-fund pollution)`)
           }
           return {
             ...item,
             currentPrice: priceData.currentPrice,
             prevClose: priceData.prevClose,
-            quantity: priceData.quantity || item.quantity, // Sync quantity from Sheet API
+            // DON'T sync quantity - price API returns multi-fund data!
+            // quantity: priceData.quantity || item.quantity, ← REMOVED!
             cost: priceData.prevClose, // Sync cost with prevClose for daily tracking
             lastRolloverDate: priceData.lastRolloverDate || item.lastRolloverDate || null // Update rollover date if present
           }

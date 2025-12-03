@@ -213,5 +213,40 @@ export async function fetchFundHoldings(fundCode) {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
+
+        const data = await response.json();
+
+        // Ensure data is an array
+        if (Array.isArray(data)) {
+            return data.map(item => {
+                // Map fields from Sheet API (handles both 'code' and 'symbol', 'currentPrice' and 'price')
+                const code = item.code || item.symbol;
+                const currentPrice = item.currentPrice !== undefined ? Number(item.currentPrice) : Number(item.price || 0);
+                const prevClose = item.prevClose !== undefined ? Number(item.prevClose) : currentPrice;
+                const quantity = item.quantity !== undefined ? Number(item.quantity) : 0;
+
+                // Calculate changePercent if missing
+                let changePercent = item.changePercent !== undefined ? Number(item.changePercent) : 0;
+                if (item.changePercent === undefined && currentPrice > 0 && prevClose > 0) {
+                    changePercent = ((currentPrice - prevClose) / prevClose) * 100;
+                }
+
+                return {
+                    code: code || 'UNKNOWN',
+                    quantity: quantity,
+                    cost: prevClose || currentPrice, // Use prevClose as initial cost estimate
+                    currentPrice: currentPrice,
+                    prevClose: prevClose,
+                    changePercent: changePercent,
+                    isForeign: false,
+                    isManual: false
+                };
+            });
+        }
+
+        return [];
+    } catch (error) {
+        console.error(`Error fetching holdings for ${fundCode}:`, error);
+        return [];
     }
 }

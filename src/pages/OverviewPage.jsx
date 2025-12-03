@@ -151,7 +151,7 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
                         </div>
                         <div className="text-right pt-2">
                             <span className="text-[10px] text-muted-foreground">
-                                Son Güncelleme: {fund.lastUpdateTime || getCurrentTime()}
+                                Son Güncelleme: {lastUpdateTime || getCurrentTime()}
                             </span>
                         </div>
                     </div>
@@ -180,54 +180,8 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
         })
     );
 
-    // Collect all holdings from all funds to fetch prices
-    const allHoldings = funds.flatMap(f => f.holdings || [])
-
-    // Use the hook to fetch live prices for all holdings
-    // This ensures Overview Page is always up to date without visiting Detail Page
-    const { usdRate, prevUsdRate } = useStockPriceUpdates(allHoldings, (updatedPrices) => {
-        setFunds(currentFunds => {
-            return currentFunds.map(fund => {
-                if (!fund.holdings) return fund
-
-                // Find the update time from any stock in this fund (they all come from the same sheet)
-                let sheetUpdateTime = null
-
-                // Update holdings with new prices
-                const updatedHoldings = fund.holdings.map(h => {
-                    const update = updatedPrices.find(p => p.code === h.code)
-                    if (update) {
-                        if (update.updateTime && !sheetUpdateTime) {
-                            sheetUpdateTime = update.updateTime
-                        }
-                        return {
-                            ...h,
-                            currentPrice: update.currentPrice,
-                            quantity: update.quantity || h.quantity, // Sync quantity from Sheet API
-                            // Sync cost with prevClose to match PortfolioDetailPage logic
-                            // This ensures Overview shows "Daily Return" instead of "Total Return"
-                            // consistent with the Detail Page view.
-                            cost: update.prevClose || h.cost,
-                            prevClose: update.prevClose
-                        }
-                    }
-                    return h
-                })
-
-                // Recalculate totals locally for the view (does not write to Firestore)
-                // This makes the card "Live"
-                // We intentionally do NOT update 'fund.totalValue' here to avoid writing to Firestore from Overview
-                // The SortableFundCard will use these updated holdings to calculate the display value
-                return {
-                    ...fund,
-                    holdings: updatedHoldings,
-                    // We add a flag to tell SortableFundCard to prefer calculated values over stale Firestore values
-                    _isLive: true,
-                    lastUpdateTime: sheetUpdateTime // Store the time from the Sheet
-                }
-            })
-        })
-    }, 60000) // Update every minute
+    // Use hook just to get USD rate (pass empty portfolio)
+    const { usdRate, prevUsdRate } = useStockPriceUpdates([], null, null, 60000)
 
     useEffect(() => {
         const unsubscribe = subscribeToFunds((fundsData) => {

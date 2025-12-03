@@ -343,13 +343,19 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const [isSyncing, setIsSyncing] = useState(false)
 
   const handleSyncFromSheet = async () => {
+    console.log(`🔵 SYNC START for fund: ${fundCode}`)
     if (!confirm("Google Sheet'ten tüm hisse listesini çekmek üzeresiniz. Mevcut listeniz güncellenecektir. Onaylıyor musunuz?")) return
 
     setIsSyncing(true)
     try {
       // Import dynamically to avoid circular dependency issues if any
       const { fetchFundHoldings } = await import('@/services/stockPriceService')
+      console.log(`📡 Fetching holdings for: ${fundCode}`)
       const sheetHoldings = await fetchFundHoldings(fundCode)
+
+      console.log(`📥 SHEET DATA received for ${fundCode}:`, sheetHoldings.length, 'holdings')
+      console.log(`   First holding:`, sheetHoldings[0])
+      console.log(`   DSTKF in sheet:`, sheetHoldings.find(h => h.code === 'DSTKF'))
 
       if (sheetHoldings.length === 0) {
         alert("Sheet'ten veri çekilemedi veya liste boş.")
@@ -379,17 +385,23 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
         }
       })
 
+      console.log(`🔄 MERGED DATA for ${fundCode}:`, mergedHoldings.length, 'holdings')
+      console.log(`   First merged:`, mergedHoldings[0])
+      console.log(`   DSTKF merged:`, mergedHoldings.find(h => h.code === 'DSTKF'))
+
       // Update Firestore - Don't send totalValue/totalProfit as they will be recalculated
       // from the new holdings after the page reloads
+      console.log(`💾 SAVING to Firestore for fund: ${fundCode}`)
       await updateFundHoldings(fundCode, mergedHoldings)
+      console.log(`✅ SAVED successfully to Firestore for: ${fundCode}`)
 
       alert(`${mergedHoldings.length} hisse başarıyla güncellendi. Sayfa yenilenecek.`)
       // Force reload to recalculate totals with new holdings
       window.location.reload()
 
     } catch (error) {
-      console.error("Sync error:", error)
-      alert("Senkronizasyon sırasında hata oluştu.")
+      console.error("❌ Sync error:", error)
+      alert("Senkronizasyon sırasında hata oluştu: " + error.message)
     } finally {
       setIsSyncing(false)
     }

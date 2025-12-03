@@ -30,9 +30,10 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     return String(code).trim().replace(/ FONU$/i, '').toUpperCase()
   }
 
-  // Reset fresh data flag when switching funds
+  // Reset fresh data flag and clear portfolio when switching funds
   useEffect(() => {
     hasFreshDataRef.current = false
+    setPortfolio([]) // Force clean slate - prevents cross-fund data pollution
   }, [fundCode])
 
   // Subscribe to fund data

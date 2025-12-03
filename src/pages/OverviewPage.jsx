@@ -35,20 +35,57 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
         transform,
         transition,
         isDragging
+    } = useSortable({ id: fund.id, disabled: !isAdmin });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        zIndex: isDragging ? 1000 : 1,
+    };
+
+    // Local state for live data
+    const [liveHoldings, setLiveHoldings] = useState(fund.holdings || [])
+    const [lastUpdateTime, setLastUpdateTime] = useState(fund.lastUpdateTime)
+
+    // Use hook for THIS fund to get correct time and data
+    const { error } = useStockPriceUpdates(fund.holdings, (updatedHoldings) => {
+        // console.log(`🔄 Update for ${fund.id}:`, updatedHoldings)
+        setLiveHoldings(updatedHoldings)
+
+        // Find update time from any stock
+        const time = updatedHoldings.find(h => h.updateTime)?.updateTime
+        // console.log(`⏰ Time for ${fund.id}:`, time)
+
+        if (time) {
+            setLastUpdateTime(time)
+        } else {
+            // console.warn(`⚠️ No updateTime found for ${fund.id}`)
+        }
+    }, fund.id, 60000)
+
+    if (error) {
+        console.error(`❌ Error updating ${fund.id}:`, error)
+    }
+
+    let { totalReturn, totalValue, totalProfit } = calculateFundReturn(liveHoldings, fund.multiplier, usdRate, prevUsdRate, fund.ppfRate)
+
+    const [isEditing, setIsEditing] = useState(false)
+    const [editName, setEditName] = useState(fund.name)
 
     const handleSaveName = async (e) => {
-            e.stopPropagation()
-            if (editName.trim() !== fund.name) {
-                await updateFundName(fund.id, editName)
-            }
-            setIsEditing(false)
+        e.stopPropagation()
+        if (editName.trim() !== fund.name) {
+            await updateFundName(fund.id, editName)
         }
+        setIsEditing(false)
+    }
 
     const handleCancelEdit = (e) => {
-            e.stopPropagation()
-            setEditName(fund.name)
-            setIsEditing(false)
-        }
+        e.stopPropagation()
+        setEditName(fund.name)
+        setIsEditing(false)
+    }
 
     return (
         <div ref={setNodeRef} style={style} className="relative group h-full">

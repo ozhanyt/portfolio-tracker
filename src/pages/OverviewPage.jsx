@@ -196,6 +196,29 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
             </Card>
         </div>
     );
+}
+
+export function OverviewPage({ isDarkMode, setIsDarkMode }) {
+    const navigate = useNavigate()
+    const [funds, setFunds] = useState([])
+    const { marketData, isLoading } = useMarketData(60000)
+    const { isAdmin } = useAdmin()
+    const [isAddFundOpen, setIsAddFundOpen] = useState(false)
+    const [activeId, setActiveId] = useState(null);
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    // Use hook just to get USD rate (pass empty portfolio)
+    const { usdRate, prevUsdRate } = useStockPriceUpdates([], null, null, 60000)
 
     useEffect(() => {
         const unsubscribe = subscribeToFunds((fundsData) => {

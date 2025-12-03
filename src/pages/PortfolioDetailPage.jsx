@@ -324,6 +324,56 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     }
   }
 
+  const [isSyncing, setIsSyncing] = useState(false)
+
+  const handleSyncFromSheet = async () => {
+    if (!confirm("Google Sheet'ten tüm hisse listesini çekmek üzeresiniz. Mevcut listeniz güncellenecektir. Onaylıyor musunuz?")) return
+
+    setIsSyncing(true)
+    try {
+      // Import dynamically to avoid circular dependency issues if any
+      const { fetchFundHoldings } = await import('@/services/stockPriceService')
+      const sheetHoldings = await fetchFundHoldings(fundCode)
+
+      if (sheetHoldings.length === 0) {
+        alert("Sheet'ten veri çekilemedi veya liste boş.")
+        return
+      }
+
+      // Merge with existing holdings to preserve quantities if code matches
+      const mergedHoldings = sheetHoldings.map(sheetItem => {
+        const existingItem = portfolio.find(p => p.code === sheetItem.code)
+        if (existingItem) {
+          return {
+            ...sheetItem,
+            quantity: existingItem.quantity, // Preserve quantity
+            cost: existingItem.cost, // Preserve cost
+            isForeign: existingItem.isForeign,
+            isManual: existingItem.isManual
+          }
+        }
+        return sheetItem
+      })
+
+      // Update Firestore
+      await updateFundTotals(fundCode, {
+        totalValue,
+        totalProfit,
+        returnRate: totalReturnPercent
+      }, mergedHoldings)
+
+      alert(`${mergedHoldings.length} hisse başarıyla güncellendi.`)
+      // Force reload to see changes
+      window.location.reload()
+
+    } catch (error) {
+      console.error("Sync error:", error)
+      alert("Senkronizasyon sırasında hata oluştu.")
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
   if (!fundData) return <div className="p-8 text-center">Yükleniyor...</div>
 
   return (
@@ -391,13 +441,24 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
               )}
             </button>
             {isAdmin && (
-              <button
-                onClick={() => setIsAddModalOpen(true)}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                <Plus className="h-5 w-5" />
-                <span className="font-medium">Hisse Ekle</span>
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSyncFromSheet}
+                  disabled={isSyncing}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50"
+                  title="Google Sheet'ten hisse listesini çek"
+                >
+                  <RefreshCw className={`h-5 w-5 ${isSyncing ? 'animate-spin' : ''}`} />
+                  <span className="font-medium hidden sm:inline">Sheet'ten Çek</span>
+                </button>
+                <button
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  <Plus className="h-5 w-5" />
+                  <span className="font-medium hidden sm:inline">Hisse Ekle</span>
+                </button>
+              </div>
             )}
           </div>
         </header>

@@ -204,6 +204,12 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const isSyncingRef = useRef(false)
 
   useEffect(() => {
+    // Skip if portfolio is empty (fund switch in progress)
+    if (!portfolio || portfolio.length === 0) {
+      console.log(`⏭️ Skipping totals update - portfolio empty for ${fundCode}`)
+      return
+    }
+
     const now = Date.now()
     const STORAGE_KEY = `last_fund_update_${fundCode}`
     const lastUpdate = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10)
@@ -224,6 +230,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     )
 
     if (shouldUpdate) {
+      console.log(`💾 Auto-saving totals for ${fundCode}`, { totalValue, totalProfit })
       isSyncingRef.current = true
 
       // Update storage immediately to prevent other tabs/reloads from triggering
@@ -242,7 +249,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
           isSyncingRef.current = false
         })
     }
-  }, [totalValue, totalProfit, totalReturnPercent, fundData, fundCode])
+  }, [totalValue, totalProfit, totalReturnPercent, fundData, fundCode, portfolio])
 
 
 

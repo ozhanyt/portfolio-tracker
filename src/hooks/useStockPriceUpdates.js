@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from 'react'
-import { fetchStockPrices, fetchUSDTRYRate } from '@/services/stockPriceService'
+import { fetchStockPrices, fetchUSDTRYRate, fetchFundHoldings } from '@/services/stockPriceService'
 
 /**
  * Hook to automatically update stock prices at regular intervals
  * @param {Array} portfolio - Current portfolio data
  * @param {Function} onUpdate - Callback function to update prices
+ * @param {string} fundCode - Optional fund code. If provided, fetches data specific to that fund.
  * @param {number} intervalMs - Update interval in milliseconds (default: 300000 = 5 minutes)
  */
 export function useStockPriceUpdates(portfolio, onUpdate, fundCode, intervalMs = 900000) {
@@ -43,30 +44,40 @@ export function useStockPriceUpdates(portfolio, onUpdate, fundCode, intervalMs =
             setError(null)
 
             try {
-                // Separate local and foreign stocks
-                const localSymbols = [...new Set(portfolio
-                    .filter(item => !item.isManual && !item.isForeign)
-                    .map(item => item.code)
-                )]
-
-                const foreignSymbols = [...new Set(portfolio
-                    .filter(item => !item.isManual && item.isForeign)
-                    .map(item => item.code)
-                )]
-
                 let allPrices = []
 
-                // Fetch local stocks - PASS FUNDCODE!
-                if (localSymbols.length > 0) {
-                    const localPrices = await fetchStockPrices(localSymbols, { fundCode })
-                    allPrices = [...allPrices, ...localPrices]
+                // STRATEGY 1: If fundCode is provided, fetch ALL holdings for that fund
+                // This is more reliable for fund-specific views and avoids cross-fund pollution
+                // It uses the same endpoint as "Sync from Sheet"
+                if (fundCode) {
+                    console.log(`📡 Fetching price updates via fetchFundHoldings for ${fundCode}`)
+                    const fundHoldings = await fetchFundHoldings(fundCode)
+                    allPrices = fundHoldings
                 }
+                // STRATEGY 2: If no fundCode (e.g. Overview page), fetch by symbols
+                else {
+                    // Separate local and foreign stocks
+                    const localSymbols = [...new Set(portfolio
+                        .filter(item => !item.isManual && !item.isForeign)
+                        .map(item => item.code)
+                    )]
 
-                // Fetch foreign stocks
-                if (foreignSymbols.length > 0) {
-                    const foreignPrices = await fetchStockPrices(foreignSymbols, { isForeign: true, fundCode })
+                    const foreignSymbols = [...new Set(portfolio
+                        .filter(item => !item.isManual && item.isForeign)
+                        .map(item => item.code)
+                    )]
 
-                    allPrices = [...allPrices, ...foreignPrices]
+                    // Fetch local stocks
+                    if (localSymbols.length > 0) {
+                        const localPrices = await fetchStockPrices(localSymbols)
+                        allPrices = [...allPrices, ...localPrices]
+                    }
+
+                    // Fetch foreign stocks
+                    if (foreignSymbols.length > 0) {
+                        const foreignPrices = await fetchStockPrices(foreignSymbols, { isForeign: true })
+                        allPrices = [...allPrices, ...foreignPrices]
+                    }
                 }
 
                 if (allPrices.length > 0) {

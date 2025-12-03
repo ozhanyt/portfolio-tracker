@@ -32,6 +32,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
   // Reset fresh data flag and clear portfolio when switching funds
   useEffect(() => {
+    console.log(`🔄 FUND SWITCH → ${fundCode}`)
     hasFreshDataRef.current = false
     setPortfolio([]) // Force clean slate - prevents cross-fund data pollution
     latestPricesRef.current = {} // Clear price cache - critical for multi-fund support
@@ -41,6 +42,12 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   useEffect(() => {
     const unsubscribe = subscribeToFund(fundCode, (data) => {
       if (data) {
+        console.log(`📥 FIRESTORE DATA for ${fundCode}:`, {
+          holdingsCount: data.holdings?.length,
+          firstHolding: data.holdings?.[0],
+          totalValue: data.totalValue,
+          totalProfit: data.totalProfit
+        })
         setFundData(data)
 
         // Merge incoming Firestore holdings with locally cached prices
@@ -70,10 +77,10 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
         // Only update portfolio if we don't have fresh local data
         // This prevents Firestore updates from overwriting fresh calculations
         if (!hasFreshDataRef.current) {
-          console.log("🔥 Firestore update applied (No fresh data)")
+          console.log(`✅ APPLYING Firestore data for ${fundCode} (${mergedHoldings.length} holdings)`)
           setPortfolio(mergedHoldings)
         } else {
-          console.log("🛡️ Firestore update SKIPPED (Has fresh data)")
+          console.log(`🛡️ SKIPPING Firestore update for ${fundCode} (has fresh data)`)
         }
 
         setMultiplier(data.multiplier || 1)
@@ -88,7 +95,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
   // Auto-update stock prices
   const handlePriceUpdate = async (prices) => {
-    console.log("💰 Prices fetched:", prices.length)
+    console.log(`💰 PRICE UPDATE for ${fundCode}:`, prices.length, 'prices')
 
     // Update the ref with new prices
     prices.forEach(p => {
@@ -97,6 +104,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
     // Use functional update to ensure we work with the most recent state
     setPortfolio(currentPortfolio => {
+      console.log(`📊 Current portfolio before price update:`, currentPortfolio.length, 'items')
       const newPortfolio = currentPortfolio.map(item => {
         // Try exact match first, then normalized match
         let priceData = prices.find(p => p.code === item.code)
@@ -118,6 +126,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
         return item
       })
 
+      console.log(`✨ NEW portfolio after price update:`, newPortfolio.length, 'items', newPortfolio[0])
       hasFreshDataRef.current = true // Mark that we have fresh local data
       return newPortfolio
     })

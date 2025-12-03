@@ -34,6 +34,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   useEffect(() => {
     hasFreshDataRef.current = false
     setPortfolio([]) // Force clean slate - prevents cross-fund data pollution
+    latestPricesRef.current = {} // Clear price cache - critical for multi-fund support
   }, [fundCode])
 
   // Subscribe to fund data

@@ -774,6 +774,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
           data={sortedData}
           onDelete={isAdmin ? handleRemoveStock : undefined}
           onEdit={isAdmin ? handleEditStock : undefined}
+          onUpdateLogo={isAdmin ? handleUpdateLogo : undefined}
           fundCode={fundCode}
         />
 

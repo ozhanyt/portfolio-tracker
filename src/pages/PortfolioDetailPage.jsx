@@ -292,10 +292,13 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
 
 
-  // Add weights
+  // Add weights and map for table display
   const finalData = calculatedPortfolio.map(item => ({
     ...item,
-    weight: totalValue > 0 ? ((item.currentValue / totalValue) * 100) : 0
+    weight: totalValue > 0 ? ((item.currentValue / totalValue) * 100) : 0,
+    value: item.currentValue, // Alias for table
+    profit: item.profitTL,    // Alias for table
+    logoUrl: logoMap[item.code] || item.logoUrl // Use global logo if available
   }))
 
   const sortedData = [...finalData].sort((a, b) => b.weight - a.weight)

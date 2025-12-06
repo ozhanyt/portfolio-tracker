@@ -5,7 +5,7 @@ import { LayoutDashboard, TrendingUp, TrendingDown, Wallet, Plus, ArrowLeft, Ref
 import { PortfolioTable } from '@/components/PortfolioTable'
 import { AddStockDialog } from '@/components/AddStockDialog'
 import { UpdateLogoDialog } from '@/components/UpdateLogoDialog'
-import { PortfolioTreemap } from '@/components/PortfolioTreemap'
+import { PortfolioAllocationChart } from '@/components/PortfolioAllocationChart'
 import { formatCurrency, formatPercent, formatNumber, cn } from '@/lib/utils'
 import { useStockPriceUpdates } from '@/hooks/useStockPriceUpdates'
 import { getAllLogos } from '@/services/logoService'
@@ -734,9 +734,9 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
           </div>
         </div>
 
-        {/* Portfolio Treemap Section */}
+        {/* Portfolio Allocation Chart Section */}
         <div className="mt-8 space-y-4">
-          <PortfolioTreemap data={sortedData} />
+          <PortfolioAllocationChart data={sortedData} />
         </div>
 
         <PortfolioTable

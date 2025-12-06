@@ -1,0 +1,16 @@
+name: Intraday Snapshot Cron
+
+on:
+  schedule:
+    # Run every 5 minutes from 07:00 to 15:55 UTC (10:00 to 18:55 TRT)
+    # Monday to Friday
+    - cron: '*/5 7-15 * * 1-5'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Vercel Cron Endpoint
+        run: |
+          curl -X GET https://portfolio-tracker-lilac-mu.vercel.app/api/cron/snapshot-intraday

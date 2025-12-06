@@ -27,13 +27,13 @@ export function formatNumber(value, maxDecimals = 3) {
     }).format(value)
 }
 
-export function formatFundPrice(value) {
+export function formatFundPrice(value, isFund = true) {
     if (value === null || value === undefined || isNaN(value)) {
-        return '0,000000'
+        return isFund ? '0,000000' : '0,00'
     }
     return new Intl.NumberFormat('tr-TR', {
-        minimumFractionDigits: 6,
-        maximumFractionDigits: 6,
+        minimumFractionDigits: isFund ? 6 : 2,
+        maximumFractionDigits: isFund ? 6 : 2,
     }).format(value)
 }
 

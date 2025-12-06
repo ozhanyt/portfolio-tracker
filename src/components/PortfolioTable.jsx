@@ -50,8 +50,7 @@ export function PortfolioTable({ data, onDelete, onEdit, onUpdateLogo, fundCode 
                             <tbody className="divide-y">
                                 {data.map((item) => {
                                     const isItemFund = isFund(item.code, item.isForeign)
-                                    // Debug log for first item only to avoid spam
-                                    if (item === data[0]) console.log('📊 PortfolioTable prop onUpdateLogo:', typeof onUpdateLogo)
+
 
                                     return (
                                         <tr key={item.code} className="hover:bg-muted/50 transition-colors group">
@@ -62,7 +61,6 @@ export function PortfolioTable({ data, onDelete, onEdit, onUpdateLogo, fundCode 
                                                 )} />
                                                 <div
                                                     onClick={(e) => {
-                                                        console.log('🖱️ Div clicked for', item.code);
                                                         e.stopPropagation(); // Prevent row click if any
                                                         onUpdateLogo && onUpdateLogo(item);
                                                     }}

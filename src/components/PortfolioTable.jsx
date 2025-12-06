@@ -66,7 +66,7 @@ export function PortfolioTable({ data, onDelete, onEdit, onUpdateLogo, fundCode 
                                                         e.stopPropagation(); // Prevent row click if any
                                                         onUpdateLogo && onUpdateLogo(item);
                                                     }}
-                                                    className={cn("transition-transform hover:scale-110 relative z-10", onUpdateLogo && "cursor-pointer")}
+                                                    className={cn("transition-transform hover:scale-110 relative z-10 shrink-0", onUpdateLogo && "cursor-pointer")}
                                                     title={onUpdateLogo ? "Logoyu Düzenle" : ""}
                                                 >
                                                     <StockLogo symbol={item.code} logoUrl={item.logoUrl} />

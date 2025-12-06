@@ -4,8 +4,9 @@ import { cn, formatCurrency } from '@/lib/utils'
 
 const CustomContent = ({ depth, x, y, width, height, index, payload, colors, rank, name }) => {
     // Only render leaf nodes (depth 1 in our case, assuming root is depth 0)
-    // Also add safety check for payload
-    if (depth !== 1 || !payload || !payload.color) return null
+    if (depth !== 1) return null
+
+    const fillColor = payload?.color || '#3b82f6'
 
     return (
         <g>
@@ -15,7 +16,7 @@ const CustomContent = ({ depth, x, y, width, height, index, payload, colors, ran
                 width={width}
                 height={height}
                 style={{
-                    fill: payload.color,
+                    fill: fillColor,
                     stroke: '#fff',
                     strokeWidth: 2,
                     strokeOpacity: 1,
@@ -116,7 +117,7 @@ export function PortfolioTreemap({ data }) {
                 </CardTitle>
             </CardHeader>
             <CardContent className="p-0 sm:p-6">
-                <div className="h-[400px] w-full min-h-[400px]">
+                <div className="h-[500px] w-full">
                     {chartData.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
                             <Treemap
@@ -126,17 +127,19 @@ export function PortfolioTreemap({ data }) {
                                 stroke="#fff"
                                 content={<CustomContent />}
                                 isAnimationActive={false}
+                                type="nest"
                             >
                                 <Tooltip content={<CustomTooltip />} />
                             </Treemap>
                         </ResponsiveContainer>
                     ) : (
-                        <div className="h-full flex items-center justify-center text-muted-foreground">
+                    ): (
+                            <div className = "h-full flex items-center justify-center text-muted-foreground">
                             Görüntülenecek veri yok
-                        </div>
-                    )}
                 </div>
-            </CardContent>
-        </Card>
+                    )}
+            </div>
+        </CardContent>
+        </Card >
     )
 }

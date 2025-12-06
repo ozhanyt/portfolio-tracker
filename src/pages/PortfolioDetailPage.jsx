@@ -17,6 +17,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const { fundCode } = useParams()
   const navigate = useNavigate()
   const { isAdmin } = useAdmin()
+  console.log('🔑 Admin Status:', isAdmin)
 
   const [fundData, setFundData] = useState(null)
   const [portfolio, setPortfolio] = useState([])
@@ -38,6 +39,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   }
 
   const handleUpdateLogo = (stock) => {
+    console.log('🖱️ handleUpdateLogo clicked for:', stock.code)
     setSelectedLogoStock(stock)
     setIsLogoDialogOpen(true)
   }

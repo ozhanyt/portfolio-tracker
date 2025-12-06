@@ -132,7 +132,7 @@ export function IntradayChart({ fundCode }) {
                     </div>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                    {data.length} snapshot • Son güncelleme: {data[data.length - 1]?.time}
+                    Son güncelleme: {data[data.length - 1]?.time || '--:--'}
                 </p>
             </CardHeader>
             <CardContent>

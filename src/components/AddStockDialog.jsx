@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { X, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { fetchStockPrice } from '@/services/stockPriceService'
+import { saveLogoUrl } from '@/services/logoService'
 
 // Helper to check if a symbol is a fund
 function isFund(symbol) {
@@ -16,7 +17,8 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
         quantity: '',
         prevClose: '',
         currentPrice: '',
-        isForeign: false
+        isForeign: false,
+        logoUrl: ''
     })
     const [isManual, setIsManual] = useState(false)
     const [isFundEntry, setIsFundEntry] = useState(false)
@@ -28,7 +30,8 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                 quantity: (editingStock.quantity || 0).toString(),
                 prevClose: '',
                 currentPrice: '',
-                isForeign: editingStock.isForeign || false
+                isForeign: editingStock.isForeign || false,
+                logoUrl: editingStock.logoUrl || ''
             })
             const isFundVal = isFund(editingStock.code || '')
             setIsFundEntry(isFundVal)
@@ -40,7 +43,8 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                 quantity: '',
                 prevClose: '',
                 currentPrice: '',
-                isForeign: false
+                isForeign: false,
+                logoUrl: ''
             })
             setIsFundEntry(false)
             setIsManual(false)
@@ -68,6 +72,11 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
         setError(null)
 
         try {
+            // Save Logo URL globally if provided
+            if (formData.logoUrl && formData.code) {
+                await saveLogoUrl(formData.code.toUpperCase(), formData.logoUrl)
+            }
+
             if (isManual) {
                 // Manual entry
                 if (!formData.prevClose || !formData.currentPrice) {
@@ -80,10 +89,11 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                     cost: Number(formData.prevClose),
                     prevClose: Number(formData.prevClose),
                     currentPrice: Number(formData.currentPrice),
-                    isManual: true
+                    isManual: true,
+                    logoUrl: formData.logoUrl
                 })
 
-                setFormData({ code: '', quantity: '', prevClose: '', currentPrice: '' })
+                setFormData({ code: '', quantity: '', prevClose: '', currentPrice: '', logoUrl: '' })
                 onClose()
             } else {
                 // Auto-fetch for stocks
@@ -101,10 +111,11 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                     currentPrice: result.currentPrice,
                     isManual: false,
                     isForeign: formData.isForeign,
-                    currency: formData.isForeign ? 'USD' : 'TRY'
+                    currency: formData.isForeign ? 'USD' : 'TRY',
+                    logoUrl: formData.logoUrl
                 })
 
-                setFormData({ code: '', quantity: '', prevClose: '', currentPrice: '', isForeign: false })
+                setFormData({ code: '', quantity: '', prevClose: '', currentPrice: '', isForeign: false, logoUrl: '' })
                 onClose()
             }
         } catch (err) {
@@ -142,6 +153,21 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                                 value={formData.code}
                                 onChange={e => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                             />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Logo URL (İsteğe Bağlı)</label>
+                            <input
+                                type="url"
+                                disabled={isLoading}
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                placeholder="https://..."
+                                value={formData.logoUrl}
+                                onChange={e => setFormData({ ...formData, logoUrl: e.target.value })}
+                            />
+                            <p className="text-[10px] text-muted-foreground">
+                                * Buraya girdiğiniz logo tüm portföylerde bu hisse için geçerli olur.
+                            </p>
                         </div>
 
                         <div className="flex items-center space-x-2 py-2">

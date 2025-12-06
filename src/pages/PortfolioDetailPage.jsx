@@ -8,6 +8,7 @@ import { IntradayChart } from '@/components/IntradayChart'
 import { formatCurrency, formatPercent, formatNumber, cn } from '@/lib/utils'
 import { useStockPriceUpdates } from '@/hooks/useStockPriceUpdates'
 import { manualSnapshot } from '@/services/intradayService'
+import { getAllLogos } from '@/services/logoService'
 
 import { subscribeToFund, updateFundHoldings, updateFundMultiplier, updateFundTotals, updateFundPpfRate } from '../services/firestoreService'
 import { useAdmin } from '@/contexts/AdminContext'
@@ -24,6 +25,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingStock, setEditingStock] = useState(null)
   const [isSnapshotting, setIsSnapshotting] = useState(false)
+  const [logoMap, setLogoMap] = useState({})
 
   const latestPricesRef = useRef({})
   const hasFreshDataRef = useRef(false) // Track if we have fresh local calculations
@@ -32,6 +34,15 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const normalizeCode = (code) => {
     return String(code).trim().replace(/ FONU$/i, '').toUpperCase()
   }
+
+  // Fetch global logos on mount
+  useEffect(() => {
+    const fetchLogos = async () => {
+      const logos = await getAllLogos()
+      setLogoMap(logos)
+    }
+    fetchLogos()
+  }, [])
 
   // Reset fresh data flag and clear portfolio when switching funds
   useEffect(() => {

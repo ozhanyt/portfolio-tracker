@@ -1,6 +1,6 @@
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts'
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { formatCurrency, formatNumber } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 
 // Nice modern color palette for charts
 const COLORS = [
@@ -38,19 +38,32 @@ const CustomTooltip = ({ active, payload }) => {
     return null
 }
 
-const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
+const renderCustomLabel = (props) => {
     const RADIAN = Math.PI / 180;
+    const { cx, cy, midAngle, innerRadius, outerRadius, percent, name } = props;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
-    // Only show label if segment is large enough
-    if (percent < 0.05) return null;
+    // Custom logic for outside labels
+    const sin = Math.sin(-midAngle * RADIAN);
+    const cos = Math.cos(-midAngle * RADIAN);
+    const sx = cx + (outerRadius + 10) * cos;
+    const sy = cy + (outerRadius + 10) * sin;
+    const mx = cx + (outerRadius + 30) * cos;
+    const my = cy + (outerRadius + 30) * sin;
+    const ex = mx + (cos >= 0 ? 1 : -1) * 22;
+    const ey = my;
+    const textAnchor = cos >= 0 ? 'start' : 'end';
 
     return (
-        <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={12} fontWeight="bold">
-            {`${(percent * 100).toFixed(0)}%`}
-        </text>
+        <g>
+            <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={props.fill} fill="none" />
+            <circle cx={ex} cy={ey} r={2} fill={props.fill} stroke="none" />
+            <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={4} textAnchor={textAnchor} fill="#999" fontSize={12} fontWeight="bold">
+                {name}: %{(percent * 100).toFixed(2)}
+            </text>
+        </g>
     );
 };
 
@@ -94,7 +107,7 @@ export function PortfolioAllocationChart({ data }) {
                 </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center p-6">
-                <div className="h-[350px] w-full max-w-[500px]">
+                <div className="h-[400px] w-full max-w-[800px]">
                     {chartData.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
@@ -102,10 +115,10 @@ export function PortfolioAllocationChart({ data }) {
                                     data={chartData}
                                     cx="50%"
                                     cy="50%"
-                                    labelLine={false}
-                                    label={renderCustomizedLabel}
+                                    labelLine={false} // We draw our own in renderCustomLabel
+                                    label={renderCustomLabel}
                                     outerRadius={120}
-                                    innerRadius={60} // Donut style
+                                    innerRadius={70} // Thinner donut
                                     fill="#8884d8"
                                     dataKey="value"
                                     paddingAngle={2}
@@ -115,7 +128,7 @@ export function PortfolioAllocationChart({ data }) {
                                     ))}
                                 </Pie>
                                 <Tooltip content={<CustomTooltip />} />
-                                <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '20px' }} />
+                                {/* Legend removed as requested */}
                             </PieChart>
                         </ResponsiveContainer>
                     ) : (

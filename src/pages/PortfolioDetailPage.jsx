@@ -4,8 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { LayoutDashboard, TrendingUp, TrendingDown, Wallet, Plus, ArrowLeft, RefreshCw, Settings } from 'lucide-react'
 import { PortfolioTable } from '@/components/PortfolioTable'
 import { AddStockDialog } from '@/components/AddStockDialog'
+import { IntradayChart } from '@/components/IntradayChart'
 import { formatCurrency, formatPercent, formatNumber, cn } from '@/lib/utils'
 import { useStockPriceUpdates } from '@/hooks/useStockPriceUpdates'
+import { manualSnapshot } from '@/services/intradayService'
 
 import { subscribeToFund, updateFundHoldings, updateFundMultiplier, updateFundTotals, updateFundPpfRate } from '../services/firestoreService'
 import { useAdmin } from '@/contexts/AdminContext'
@@ -21,6 +23,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const [ppfRate, setPpfRate] = useState(0)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingStock, setEditingStock] = useState(null)
+  const [isSnapshotting, setIsSnapshotting] = useState(false)
 
   const latestPricesRef = useRef({})
   const hasFreshDataRef = useRef(false) // Track if we have fresh local calculations
@@ -415,6 +418,33 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     }
   }
 
+  // Manual snapshot trigger for testing (localhost only)
+  const handleManualSnapshot = async () => {
+    setIsSnapshotting(true)
+    try {
+      await manualSnapshot(fundCode)
+      // No need to reload - chart updates via Firestore listener
+    } catch (error) {
+      console.error('Snapshot error:', error)
+      alert('Snapshot alınamadı: ' + error.message)
+    } finally {
+      setIsSnapshotting(false)
+    }
+  }
+
+  // Auto-snapshot simulation for Localhost (runs every 5 minutes while page is open)
+  useEffect(() => {
+    // Only run in development mode to avoid conflict with Vercel Cron in production
+    if (!isAdmin || !import.meta.env.DEV) return
+
+    const intervalId = setInterval(() => {
+      console.log('⏰ Auto-snapshot trigger...')
+      handleManualSnapshot()
+    }, 5 * 60 * 1000) // 5 minutes
+
+    return () => clearInterval(intervalId)
+  }, [isAdmin, fundCode])
+
   if (!fundData) return <div className="p-8 text-center">Yükleniyor...</div>
 
   return (
@@ -701,6 +731,24 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
               </CardContent>
             </Card>
           </div>
+        </div>
+
+        {/* Intraday Chart Section */}
+        <div className="mt-8 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold">Gün İçi Performans</h2>
+            {isAdmin && (
+              <button
+                onClick={handleManualSnapshot}
+                disabled={isSnapshotting}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
+                title="Manuel snapshot al (test için)"
+              >
+                📸 <span className="font-medium">{isSnapshotting ? 'Kaydediliyor...' : 'Snapshot Al'}</span>
+              </button>
+            )}
+          </div>
+          <IntradayChart fundCode={fundCode} />
         </div>
 
         <PortfolioTable

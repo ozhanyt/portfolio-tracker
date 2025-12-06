@@ -101,7 +101,7 @@ export function PortfolioTable({ data, onDelete, onEdit, onUpdateLogo, fundCode 
                                             <td className={cn("p-4 text-center font-bold",
                                                 item.profit > 0 ? "text-green-600" : item.profit < 0 ? "text-red-600" : "text-gray-600"
                                             )}>
-                                                {formatCurrency(item.profit)}
+                                                {formatCurrency(item.profit, 0)}
                                             </td>
                                             {(onEdit || onDelete) && (
                                                 <td className="p-4 text-center">

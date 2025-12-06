@@ -106,7 +106,7 @@ export function IntradayChart({ fundCode }) {
                 </CardHeader>
                 <CardContent>
                     <div className="h-64 flex items-center justify-center text-muted-foreground">
-                        Henüz veri yok. "Snapshot Al" butonuna tıklayın.
+                        Henüz veri yok.
                     </div>
                 </CardContent>
             </Card>

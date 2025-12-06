@@ -737,16 +737,6 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
         <div className="mt-8 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold">Gün İçi Performans</h2>
-            {isAdmin && (
-              <button
-                onClick={handleManualSnapshot}
-                disabled={isSnapshotting}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
-                title="Manuel snapshot al (test için)"
-              >
-                📸 <span className="font-medium">{isSnapshotting ? 'Kaydediliyor...' : 'Snapshot Al'}</span>
-              </button>
-            )}
           </div>
           <IntradayChart fundCode={fundCode} />
         </div>

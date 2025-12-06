@@ -812,6 +812,14 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
             </CardContent>
           </Card>
         )}
+
+        <UpdateLogoDialog
+          isOpen={isLogoDialogOpen}
+          onClose={() => setIsLogoDialogOpen(false)}
+          stock={selectedLogoStock}
+          onSave={handleLogoSaved}
+        />
+
       </div >
     </div >
   )

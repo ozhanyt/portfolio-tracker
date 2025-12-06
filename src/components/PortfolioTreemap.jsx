@@ -133,13 +133,12 @@ export function PortfolioTreemap({ data }) {
                             </Treemap>
                         </ResponsiveContainer>
                     ) : (
-                    ): (
-                            <div className = "h-full flex items-center justify-center text-muted-foreground">
+                        <div className="h-full flex items-center justify-center text-muted-foreground">
                             Görüntülenecek veri yok
-                </div>
+                        </div>
                     )}
-            </div>
-        </CardContent>
+                </div>
+            </CardContent>
         </Card >
     )
 }

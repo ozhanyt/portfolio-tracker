@@ -47,3 +47,11 @@ export function formatPercent(value) {
         maximumFractionDigits: 2,
     }).format(value / 100)
 }
+
+// Helper to check if a symbol is a fund
+// Foreign stocks (even 3 letters) are NOT funds
+export function isFund(code, isForeign = false) {
+    if (!code) return false
+    if (isForeign) return false
+    return code.length === 3 || code.toUpperCase().includes('FON')
+}

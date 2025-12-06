@@ -2,11 +2,7 @@ import { useState, useEffect } from 'react'
 import { X, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { fetchStockPrice } from '@/services/stockPriceService'
-
-// Helper to check if a symbol is a fund
-function isFund(symbol) {
-    return symbol.length === 3 || symbol.toUpperCase().includes('FON')
-}
+import { isFund } from '@/lib/utils'
 
 export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
     const [isLoading, setIsLoading] = useState(false)
@@ -30,7 +26,7 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                 currentPrice: '',
                 isForeign: editingStock.isForeign || false
             })
-            const isFundVal = isFund(editingStock.code || '')
+            const isFundVal = isFund(editingStock.code || '', editingStock.isForeign)
             setIsFundEntry(isFundVal)
             // If editing, preserve existing isManual setting, or default to true for funds if not set
             setIsManual(editingStock.isManual !== undefined ? editingStock.isManual : isFundVal)
@@ -48,17 +44,17 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
         setError(null)
     }, [editingStock, isOpen])
 
-    // Check if code is a fund when typing
+    // Check if code is a fund when typing or when isForeign changes
     useEffect(() => {
         if (formData.code) {
-            const isFundVal = isFund(formData.code)
+            const isFundVal = isFund(formData.code, formData.isForeign)
             setIsFundEntry(isFundVal)
             // Auto-enable manual mode for funds by default when typing new code
             if (!editingStock) {
                 setIsManual(isFundVal)
             }
         }
-    }, [formData.code])
+    }, [formData.code, formData.isForeign])
 
     if (!isOpen) return null
 

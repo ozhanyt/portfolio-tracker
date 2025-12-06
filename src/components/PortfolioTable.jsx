@@ -8,15 +8,10 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatCurrency, formatNumber, formatFundPrice, formatPercent, cn } from "@/lib/utils"
+import { formatCurrency, formatNumber, formatFundPrice, formatPercent, cn, isFund } from "@/lib/utils"
 import { ArrowUpIcon, ArrowDownIcon, MinusIcon, Trash2, Pencil, PieChart } from "lucide-react"
 import { PortfolioPieChartDialog } from './PortfolioPieChartDialog'
 import StockLogo from './StockLogo'
-
-// Helper to check if a symbol is a fund
-function isFund(code) {
-    return code.length === 3 || code.toUpperCase().includes('FON')
-}
 
 export function PortfolioTable({ data, onDelete, onEdit, onUpdateLogo, fundCode }) {
     const [isPieChartOpen, setIsPieChartOpen] = useState(false)
@@ -54,7 +49,7 @@ export function PortfolioTable({ data, onDelete, onEdit, onUpdateLogo, fundCode 
                             </thead>
                             <tbody className="divide-y">
                                 {data.map((item) => {
-                                    const isItemFund = isFund(item.code)
+                                    const isItemFund = isFund(item.code, item.isForeign)
                                     // Debug log for first item only to avoid spam
                                     if (item === data[0]) console.log('📊 PortfolioTable prop onUpdateLogo:', typeof onUpdateLogo)
 

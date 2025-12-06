@@ -5,10 +5,8 @@ import { LayoutDashboard, TrendingUp, TrendingDown, Wallet, Plus, ArrowLeft, Ref
 import { PortfolioTable } from '@/components/PortfolioTable'
 import { AddStockDialog } from '@/components/AddStockDialog'
 import { UpdateLogoDialog } from '@/components/UpdateLogoDialog'
-import { IntradayChart } from '@/components/IntradayChart'
 import { formatCurrency, formatPercent, formatNumber, cn } from '@/lib/utils'
 import { useStockPriceUpdates } from '@/hooks/useStockPriceUpdates'
-import { manualSnapshot } from '@/services/intradayService'
 import { getAllLogos } from '@/services/logoService'
 
 import { subscribeToFund, updateFundHoldings, updateFundMultiplier, updateFundTotals, updateFundPpfRate } from '../services/firestoreService'
@@ -25,7 +23,6 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const [ppfRate, setPpfRate] = useState(0)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingStock, setEditingStock] = useState(null)
-  const [isSnapshotting, setIsSnapshotting] = useState(false)
   const [logoMap, setLogoMap] = useState({})
   const [isLogoDialogOpen, setIsLogoDialogOpen] = useState(false)
   const [selectedLogoStock, setSelectedLogoStock] = useState(null)
@@ -446,32 +443,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     }
   }
 
-  // Manual snapshot trigger for testing (localhost only)
-  const handleManualSnapshot = async () => {
-    setIsSnapshotting(true)
-    try {
-      await manualSnapshot(fundCode)
-      // No need to reload - chart updates via Firestore listener
-    } catch (error) {
-      console.error('Snapshot error:', error)
-      alert('Snapshot alınamadı: ' + error.message)
-    } finally {
-      setIsSnapshotting(false)
-    }
-  }
 
-  // Auto-snapshot simulation for Localhost (runs every 5 minutes while page is open)
-  useEffect(() => {
-    // Only run in development mode to avoid conflict with Vercel Cron in production
-    if (!isAdmin || !import.meta.env.DEV) return
-
-    const intervalId = setInterval(() => {
-      console.log('⏰ Auto-snapshot trigger...')
-      handleManualSnapshot()
-    }, 5 * 60 * 1000) // 5 minutes
-
-    return () => clearInterval(intervalId)
-  }, [isAdmin, fundCode])
 
   if (!fundData) return <div className="p-8 text-center">Yükleniyor...</div>
 
@@ -761,12 +733,9 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
           </div>
         </div>
 
-        {/* Intraday Chart Section */}
+        {/* Portfolio Treemap Section */}
         <div className="mt-8 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">Gün İçi Performans</h2>
-          </div>
-          <IntradayChart fundCode={fundCode} />
+          <PortfolioTreemap data={sortedData} />
         </div>
 
         <PortfolioTable

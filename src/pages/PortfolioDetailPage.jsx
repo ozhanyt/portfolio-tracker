@@ -5,6 +5,7 @@ import { LayoutDashboard, TrendingUp, TrendingDown, Wallet, Plus, ArrowLeft, Ref
 import { PortfolioTable } from '@/components/PortfolioTable'
 import { AddStockDialog } from '@/components/AddStockDialog'
 import { UpdateLogoDialog } from '@/components/UpdateLogoDialog'
+import { PortfolioTreemap } from '@/components/PortfolioTreemap'
 import { formatCurrency, formatPercent, formatNumber, cn } from '@/lib/utils'
 import { useStockPriceUpdates } from '@/hooks/useStockPriceUpdates'
 import { getAllLogos } from '@/services/logoService'

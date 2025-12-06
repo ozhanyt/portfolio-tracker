@@ -300,7 +300,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     ...item,
     weight: totalValue > 0 ? ((item.currentValue / totalValue) * 100) : 0,
     value: item.currentValue, // Alias for table
-    profit: item.profitTL,    // Alias for table
+    profit: item.profitTL * multiplierVal,    // Alias for table (Apply multiplier here!)
     logoUrl: logoMap[item.code] || item.logoUrl // Use global logo if available
   }))
 
@@ -678,7 +678,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                         <div key={item.code} className="grid grid-cols-4 items-center text-xs sm:text-sm p-2 hover:bg-muted/50 rounded-md transition-colors gap-2">
                           <span className="font-bold text-center whitespace-nowrap overflow-hidden text-ellipsis" title={item.code}>{item.code}</span>
                           <span className="font-mono font-medium text-green-600 text-center truncate">
-                            +{formatCurrency(item.profitTL * multiplierVal)}
+                            +{formatCurrency(item.profitTL * multiplierVal, 0)}
                           </span>
                           <span className="font-bold text-green-600 bg-green-50 dark:bg-green-900/10 px-1 py-0.5 rounded text-[9px] sm:text-xs text-center">
                             +%{formatNumber(Math.abs(item.returnRate), 2)}
@@ -745,7 +745,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                         <div key={item.code} className="grid grid-cols-4 items-center text-xs sm:text-sm p-2 hover:bg-muted/50 rounded-md transition-colors gap-2">
                           <span className="font-bold text-center whitespace-nowrap overflow-hidden text-ellipsis" title={item.code}>{item.code}</span>
                           <span className={cn("font-mono font-medium text-center truncate", item.profitTL < 0 ? "text-red-600" : "text-gray-600")}>
-                            {formatCurrency(item.profitTL * multiplierVal)}
+                            {formatCurrency(item.profitTL * multiplierVal, 0)}
                           </span>
                           <span className={cn("font-bold px-1 py-0.5 rounded text-[9px] sm:text-xs text-center",
                             item.returnRate < 0 ? "text-red-600 bg-red-50 dark:bg-red-900/10" : "text-gray-600 bg-gray-100")}>

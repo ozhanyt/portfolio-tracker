@@ -5,15 +5,15 @@ export function cn(...inputs) {
     return twMerge(clsx(inputs))
 }
 
-export function formatCurrency(value) {
+export function formatCurrency(value, decimals = 2) {
     if (value === null || value === undefined || isNaN(value)) {
         return '₺0,00'
     }
     return new Intl.NumberFormat('tr-TR', {
         style: 'currency',
         currency: 'TRY',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
     }).format(value)
 }
 

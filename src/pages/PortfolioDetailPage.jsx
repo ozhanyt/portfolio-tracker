@@ -26,6 +26,8 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const [editingStock, setEditingStock] = useState(null)
   const [isSnapshotting, setIsSnapshotting] = useState(false)
   const [logoMap, setLogoMap] = useState({})
+  const [isLogoDialogOpen, setIsLogoDialogOpen] = useState(false)
+  const [selectedLogoStock, setSelectedLogoStock] = useState(null)
 
   const latestPricesRef = useRef({})
   const hasFreshDataRef = useRef(false) // Track if we have fresh local calculations
@@ -33,6 +35,17 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   // Helper to normalize stock codes (handle " FONU" suffix mismatch)
   const normalizeCode = (code) => {
     return String(code).trim().replace(/ FONU$/i, '').toUpperCase()
+  }
+
+  const handleUpdateLogo = (stock) => {
+    setSelectedLogoStock(stock)
+    setIsLogoDialogOpen(true)
+  }
+
+  const handleLogoSaved = async () => {
+    // Refresh logos
+    const logos = await getAllLogos()
+    setLogoMap(logos)
   }
 
   // Fetch global logos on mount

@@ -106,85 +106,13 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                 onAdd({
                     code: result.code,
                     quantity: Number(formData.quantity),
-                    cost: result.prevClose,
-                    prevClose: result.prevClose,
-                    currentPrice: result.currentPrice,
-                    isManual: false,
-                    isForeign: formData.isForeign,
-                    currency: formData.isForeign ? 'USD' : 'TRY',
-                    logoUrl: formData.logoUrl
-                })
-
-                setFormData({ code: '', quantity: '', prevClose: '', currentPrice: '', isForeign: false, logoUrl: '' })
-                onClose()
-            }
-        } catch (err) {
-            setError(err.message || 'Bir hata oluştu')
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <Card className="w-full max-w-md relative">
-                <button
-                    onClick={onClose}
-                    className="absolute right-4 top-4 text-muted-foreground hover:text-foreground"
-                    disabled={isLoading}
-                >
-                    <X className="h-4 w-4" />
-                </button>
-                <CardHeader>
-                    <CardTitle>{editingStock ? 'Hisse Düzenle' : 'Yeni Hisse Ekle'}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">
-                                {isFundEntry ? 'Fon Kodu' : 'Hisse Kodu'}
-                            </label>
-                            <input
-                                required
-                                type="text"
-                                disabled={!!editingStock || isLoading}
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 uppercase"
-                                placeholder={isFundEntry ? "Örn: T3B FONU" : "Örn: THYAO"}
-                                value={formData.code}
-                                onChange={e => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Logo URL (İsteğe Bağlı)</label>
-                            <input
-                                type="url"
-                                disabled={isLoading}
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                placeholder="https://..."
-                                value={formData.logoUrl}
-                                onChange={e => setFormData({ ...formData, logoUrl: e.target.value })}
-                            />
-                            <p className="text-[10px] text-muted-foreground">
-                                * Buraya girdiğiniz logo tüm portföylerde bu hisse için geçerli olur.
-                            </p>
-                        </div>
-
-                        <div className="flex items-center space-x-2 py-2">
-                            <input
-                                type="checkbox"
-                                id="isForeign"
-                                checked={formData.isForeign || false}
-                                onChange={(e) => setFormData({ ...formData, isForeign: e.target.checked })}
-                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                            />
-                            <label
-                                htmlFor="isForeign"
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                            >
-                                Yabancı Hisse (USD)
-                            </label>
-                        </div>
+                            < label
+                                htmlFor = "isForeign"
+                                className = "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                    Yabancı Hisse(USD)
+                            </label >
+                        </div >
 
                         <div className="flex items-center space-x-2 py-2">
                             <input
@@ -217,44 +145,48 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                             />
                         </div>
 
-                        {isManual && (
-                            <>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">Önceki Kapanış (Önceki Gün)</label>
-                                    <input
-                                        required
-                                        type="number"
-                                        min="0"
-                                        step="0.000001"
-                                        disabled={isLoading}
-                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                        placeholder="0.00"
-                                        value={formData.prevClose}
-                                        onChange={e => setFormData({ ...formData, prevClose: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">Fiyat (Bugün Açıklanan)</label>
-                                    <input
-                                        required
-                                        type="number"
-                                        min="0"
-                                        step="0.000001"
-                                        disabled={isLoading}
-                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                        placeholder="0.00"
-                                        value={formData.currentPrice}
-                                        onChange={e => setFormData({ ...formData, currentPrice: e.target.value })}
-                                    />
-                                </div>
-                            </>
-                        )}
+    {
+        isManual && (
+            <>
+                <div className="space-y-2">
+                    <label className="text-sm font-medium">Önceki Kapanış (Önceki Gün)</label>
+                    <input
+                        required
+                        type="number"
+                        min="0"
+                        step="0.000001"
+                        disabled={isLoading}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        placeholder="0.00"
+                        value={formData.prevClose}
+                        onChange={e => setFormData({ ...formData, prevClose: e.target.value })}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <label className="text-sm font-medium">Fiyat (Bugün Açıklanan)</label>
+                    <input
+                        required
+                        type="number"
+                        min="0"
+                        step="0.000001"
+                        disabled={isLoading}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        placeholder="0.00"
+                        value={formData.currentPrice}
+                        onChange={e => setFormData({ ...formData, currentPrice: e.target.value })}
+                    />
+                </div>
+            </>
+        )
+    }
 
-                        {error && (
-                            <div className="text-sm text-red-500 font-medium">
-                                {error}
-                            </div>
-                        )}
+    {
+        error && (
+            <div className="text-sm text-red-500 font-medium">
+                {error}
+            </div>
+        )
+    }
 
                         <div className="bg-muted/50 p-3 rounded-md text-xs text-muted-foreground space-y-1">
                             {isManual ? (
@@ -286,9 +218,9 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                                 editingStock ? 'Güncelle' : 'Portföye Ekle'
                             )}
                         </button>
-                    </form>
-                </CardContent>
-            </Card>
-        </div>
+                    </form >
+                </CardContent >
+            </Card >
+        </div >
     )
 }

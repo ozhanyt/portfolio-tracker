@@ -1,42 +1,53 @@
-width = { width }
-height = { height }
-style = {{
-    fill: fillColor,
-        stroke: '#fff',
-            strokeWidth: 2,
-                strokeOpacity: 1,
+import { ResponsiveContainer, Treemap, Tooltip } from 'recharts'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { cn, formatCurrency } from '@/lib/utils'
+
+const CustomContent = ({ depth, x, y, width, height, index, payload, colors, rank, name }) => {
+    // Only render leaf nodes (depth 1 in our case, assuming root is depth 0)
+    if (depth !== 1 || !payload) return null
+
+    const fillColor = payload.color || '#3b82f6'
+
+    return (
+        <g>
+            <rect
+                x={x}
+                y={y}
+                width={width}
+                height={height}
+                style={{
+                    fill: fillColor,
+                    stroke: '#fff',
+                    strokeWidth: 2,
+                    strokeOpacity: 1,
                 }}
             />
-{
-    width > 50 && height > 30 && (
-        <text
-            x={x + width / 2}
-            y={y + height / 2}
-            textAnchor="middle"
-            fill="#fff"
-            fontSize={14}
-            fontWeight="bold"
-            style={{ pointerEvents: 'none' }}
-        >
-            {name}
-        </text>
-    )
-}
-{
-    width > 50 && height > 50 && (
-        <text
-            x={x + width / 2}
-            y={y + height / 2 + 20}
-            textAnchor="middle"
-            fill="#fff"
-            fontSize={12}
-            style={{ pointerEvents: 'none' }}
-        >
-            {payload.returnRate >= 0 ? '+' : ''}{payload.returnRate?.toFixed(2)}%
-        </text>
-    )
-}
-        </g >
+            {width > 50 && height > 30 && (
+                <text
+                    x={x + width / 2}
+                    y={y + height / 2}
+                    textAnchor="middle"
+                    fill="#fff"
+                    fontSize={14}
+                    fontWeight="bold"
+                    style={{ pointerEvents: 'none' }}
+                >
+                    {name}
+                </text>
+            )}
+            {width > 50 && height > 50 && (
+                <text
+                    x={x + width / 2}
+                    y={y + height / 2 + 20}
+                    textAnchor="middle"
+                    fill="#fff"
+                    fontSize={12}
+                    style={{ pointerEvents: 'none' }}
+                >
+                    {payload.returnRate >= 0 ? '+' : ''}{payload.returnRate?.toFixed(2)}%
+                </text>
+            )}
+        </g>
     )
 }
 
@@ -128,6 +139,6 @@ export function PortfolioTreemap({ data }) {
                     )}
                 </div>
             </CardContent>
-        </Card >
+        </Card>
     )
 }

@@ -734,10 +734,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
           </div>
         </div>
 
-        {/* Portfolio Allocation Chart Section */}
-        <div className="mt-8 space-y-4">
-          <PortfolioAllocationChart data={sortedData} />
-        </div>
+
 
         <PortfolioTable
           data={sortedData}

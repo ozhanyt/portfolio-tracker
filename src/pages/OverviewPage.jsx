@@ -76,7 +76,8 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
         if (onReturnUpdate && totalReturn !== undefined) {
             onReturnUpdate(fund.id, totalReturn)
         }
-    }, [totalReturn, fund.id, onReturnUpdate])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [totalReturn, fund.id])
 
     const [isEditing, setIsEditing] = useState(false)
     const [editName, setEditName] = useState(fund.name)

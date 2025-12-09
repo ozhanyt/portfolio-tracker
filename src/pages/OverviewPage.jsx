@@ -202,6 +202,7 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
 export function OverviewPage({ isDarkMode, setIsDarkMode }) {
     const navigate = useNavigate()
     const [funds, setFunds] = useState([])
+    const [liveUpdateTime, setLiveUpdateTime] = useState(null)
     const { marketData, isLoading } = useMarketData(60000)
     const { isAdmin } = useAdmin()
     const [isAddFundOpen, setIsAddFundOpen] = useState(false)
@@ -220,6 +221,13 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
 
     // Use hook just to get USD rate (pass empty portfolio)
     const { usdRate, prevUsdRate } = useStockPriceUpdates([], null, null, 60000)
+
+    // Separate hook for first fund to get live updateTime
+    const firstFundHoldings = funds[0]?.holdings || []
+    useStockPriceUpdates(firstFundHoldings, (updatedHoldings) => {
+        const time = updatedHoldings.find(h => h.updateTime)?.updateTime
+        if (time) setLiveUpdateTime(time)
+    }, funds[0]?.id, 60000)
 
     useEffect(() => {
         const unsubscribe = subscribeToFunds((fundsData) => {
@@ -324,7 +332,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                                         code: f.id,
                                         returnRate: calculateFundReturn(f.holdings || [], f.multiplier, usdRate, prevUsdRate, f.ppfRate).totalReturn
                                     }))}
-                                    updateTime={funds[0]?.holdings?.find(h => h.updateTime)?.updateTime}
+                                    updateTime={liveUpdateTime}
                                 />
                                 <button
                                     onClick={() => setIsAddFundOpen(true)}

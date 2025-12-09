@@ -28,7 +28,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculateFundReturn, getCurrentTime, usdRate, prevUsdRate }) {
+function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculateFundReturn, getCurrentTime, usdRate, prevUsdRate, onReturnUpdate }) {
     const {
         attributes,
         listeners,
@@ -70,6 +70,13 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
     }
 
     let { totalReturn, totalValue, totalProfit } = calculateFundReturn(liveHoldings, fund.multiplier, usdRate, prevUsdRate, fund.ppfRate)
+
+    // Report live return to parent
+    useEffect(() => {
+        if (onReturnUpdate && totalReturn !== undefined) {
+            onReturnUpdate(fund.id, totalReturn)
+        }
+    }, [totalReturn, fund.id, onReturnUpdate])
 
     const [isEditing, setIsEditing] = useState(false)
     const [editName, setEditName] = useState(fund.name)
@@ -203,6 +210,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
     const navigate = useNavigate()
     const [funds, setFunds] = useState([])
     const [liveUpdateTime, setLiveUpdateTime] = useState(null)
+    const [liveReturns, setLiveReturns] = useState({})
     const { marketData, isLoading } = useMarketData(60000)
     const { isAdmin } = useAdmin()
     const [isAddFundOpen, setIsAddFundOpen] = useState(false)
@@ -330,7 +338,9 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                                 <ShareOnTwitterButton
                                     funds={funds.map(f => ({
                                         code: f.id,
-                                        returnRate: calculateFundReturn(f.holdings || [], f.multiplier, usdRate, prevUsdRate, f.ppfRate).totalReturn
+                                        returnRate: liveReturns[f.id] !== undefined
+                                            ? liveReturns[f.id]
+                                            : calculateFundReturn(f.holdings || [], f.multiplier, usdRate, prevUsdRate, f.ppfRate).totalReturn
                                     }))}
                                     updateTime={liveUpdateTime}
                                 />
@@ -443,6 +453,9 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                                         getCurrentTime={getCurrentTime}
                                         usdRate={usdRate}
                                         prevUsdRate={prevUsdRate}
+                                        onReturnUpdate={(fundId, returnValue) => {
+                                            setLiveReturns(prev => ({ ...prev, [fundId]: returnValue }))
+                                        }}
                                     />
                                 )
                             })}

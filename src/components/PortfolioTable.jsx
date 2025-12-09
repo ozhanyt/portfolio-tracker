@@ -138,6 +138,7 @@ export function PortfolioTable({ data, onDelete, onEdit, onUpdateLogo, fundCode 
                 isOpen={isPieChartOpen}
                 onClose={() => setIsPieChartOpen(false)}
                 data={data}
+                fundCode={fundCode}
             />
         </>
     )

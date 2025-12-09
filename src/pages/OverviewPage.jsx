@@ -7,6 +7,7 @@ import { useMarketData } from '@/hooks/useMarketData'
 import { subscribeToFunds, deleteFund, updateFundName, updateFundsOrder } from '@/services/firestoreService'
 import { useAdmin } from '@/contexts/AdminContext'
 import { AddFundDialog } from '@/components/AddFundDialog'
+import { ShareOnTwitterButton } from '@/components/ShareOnTwitterButton'
 import { useStockPriceUpdates } from '@/hooks/useStockPriceUpdates'
 
 import {
@@ -317,13 +318,22 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                     </div>
                     <div className="flex gap-3">
                         {isAdmin && (
-                            <button
-                                onClick={() => setIsAddFundOpen(true)}
-                                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                            >
-                                <Plus className="h-4 w-4" />
-                                Fon Ekle
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <ShareOnTwitterButton
+                                    funds={funds.map(f => ({
+                                        code: f.id,
+                                        returnRate: calculateFundReturn(f.holdings || [], f.multiplier, usdRate, prevUsdRate, f.ppfRate).totalReturn
+                                    }))}
+                                    updateTime={funds[0]?.holdings?.find(h => h.updateTime)?.updateTime}
+                                />
+                                <button
+                                    onClick={() => setIsAddFundOpen(true)}
+                                    className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                    Fon Ekle
+                                </button>
+                            </div>
                         )}
                         <button
                             onClick={() => setIsDarkMode(!isDarkMode)}

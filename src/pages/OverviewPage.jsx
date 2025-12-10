@@ -438,7 +438,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                     onDragEnd={handleDragEnd}
                 >
                     <SortableContext
-                        items={funds.map(f => f.id)}
+                        items={(funds || []).map(f => f.id)}
                         strategy={rectSortingStrategy}
                     >
                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

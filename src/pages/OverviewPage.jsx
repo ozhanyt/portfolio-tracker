@@ -337,7 +337,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                         {isAdmin && (
                             <div className="flex items-center gap-2">
                                 <ShareOnTwitterButton
-                                    funds={funds.map(f => ({
+                                    funds={(funds || []).map(f => ({
                                         code: f.id,
                                         returnRate: liveReturns[f.id] !== undefined
                                             ? liveReturns[f.id]

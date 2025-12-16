@@ -5,20 +5,29 @@ import { useAdmin } from '@/contexts/AdminContext'
 
 export function AdminLoginDialog({ isOpen, onClose }) {
     const { isAdmin, login, logout } = useAdmin()
+    const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
+    const [loading, setLoading] = useState(false)
 
     if (!isOpen) return null
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault()
-        if (login(password)) {
+        setError('')
+        setLoading(true)
+
+        const success = await login(email, password)
+
+        if (success) {
+            setEmail('')
             setPassword('')
             setError('')
             onClose()
         } else {
-            setError('Hatalı şifre')
+            setError('Giriş başarısız. Bilgilerinizi kontrol edin.')
         }
+        setLoading(false)
     }
 
     const handleLogout = () => {
@@ -59,19 +68,29 @@ export function AdminLoginDialog({ isOpen, onClose }) {
                         <form onSubmit={handleLogin} className="space-y-4">
                             <div className="space-y-2">
                                 <input
+                                    type="email"
+                                    placeholder="Email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    required
+                                />
+                                <input
                                     type="password"
                                     placeholder="Şifre"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    required
                                 />
                                 {error && <p className="text-xs text-red-500">{error}</p>}
                             </div>
                             <button
                                 type="submit"
-                                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 p-2 rounded-md transition-colors"
+                                disabled={loading}
+                                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 p-2 rounded-md transition-colors disabled:opacity-50"
                             >
-                                Giriş Yap
+                                {loading ? 'Giriş Yapılıyor...' : 'Giriş Yap'}
                             </button>
                         </form>
                     )}

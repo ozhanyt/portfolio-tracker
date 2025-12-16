@@ -1,31 +1,42 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { auth } from '@/firebase';
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 
 const AdminContext = createContext();
 
 export function AdminProvider({ children }) {
-    const [isAdmin, setIsAdmin] = useState(() => {
-        return localStorage.getItem('isAdmin') === 'true';
-    });
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [loading, setLoading] = useState(true);
 
-    const login = (password) => {
-        // Simple password protection
-        // In a real app, this should be validated against a secure backend or at least a hash
-        if (password === 'svkto123') { // You can change this password
-            setIsAdmin(true);
-            localStorage.setItem('isAdmin', 'true');
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setIsAdmin(!!user);
+            setLoading(false);
+        });
+        return unsubscribe;
+    }, []);
+
+    const login = async (email, password) => {
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
             return true;
+        } catch (error) {
+            console.error("Login failed:", error);
+            return false;
         }
-        return false;
     };
 
-    const logout = () => {
-        setIsAdmin(false);
-        localStorage.removeItem('isAdmin');
+    const logout = async () => {
+        try {
+            await signOut(auth);
+        } catch (error) {
+            console.error("Logout failed:", error);
+        }
     };
 
     return (
-        <AdminContext.Provider value={{ isAdmin, login, logout }}>
-            {children}
+        <AdminContext.Provider value={{ isAdmin, login, logout, loading }}>
+            {!loading && children}
         </AdminContext.Provider>
     );
 }

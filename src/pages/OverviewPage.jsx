@@ -393,40 +393,42 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                            {marketData.map((market) => (
-                                <div
-                                    key={market.symbol}
-                                    className="flex flex-col"
-                                >
-                                    <div className="text-xs text-muted-foreground font-medium mb-1 flex items-center gap-1">
-                                        {market.symbol}
-                                        {market.symbol === 'BIST100' && (
-                                            <span className="text-[10px] bg-yellow-500/20 text-yellow-600 px-1 rounded">G</span>
-                                        )}
-                                    </div>
-                                    <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
-                                        <span className="text-base sm:text-xl font-bold text-foreground tracking-tight transition-all duration-700 tabular-nums">
-                                            {market.symbol === 'BTCUSD' ? (
-                                                `$${market.price?.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
-                                            ) : market.symbol === 'BIST100' ? (
-                                                market.price?.toLocaleString('tr-TR', { maximumFractionDigits: 2 })
-                                            ) : market.symbol === 'USDTRY' ? (
-                                                market.price?.toLocaleString('tr-TR', { minimumFractionDigits: 4, maximumFractionDigits: 4 })
-                                            ) : (
-                                                market.price?.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                            {marketData
+                                .filter(m => ['USDTRY', 'BIST100', 'BTCUSD', 'GOLD_TL', 'SILVER_TL'].includes(m.symbol))
+                                .map((market) => (
+                                    <div
+                                        key={market.symbol}
+                                        className="flex flex-col"
+                                    >
+                                        <div className="text-xs text-muted-foreground font-medium mb-1 flex items-center gap-1">
+                                            {market.symbol}
+                                            {market.symbol === 'BIST100' && (
+                                                <span className="text-[10px] bg-yellow-500/20 text-yellow-600 px-1 rounded">G</span>
                                             )}
-                                        </span>
-                                        <span className={cn(
-                                            "text-sm sm:text-xl font-semibold transition-all duration-700 sm:w-28 text-left sm:text-right tabular-nums",
-                                            market.changePercent > 0 ? "text-green-500" :
-                                                market.changePercent < 0 ? "text-red-500" :
-                                                    "text-muted-foreground"
-                                        )}>
-                                            % {market.changePercent > 0 ? '+' : ''}{market.changePercent?.toFixed(2)}
-                                        </span>
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+                                            <span className="text-base sm:text-xl font-bold text-foreground tracking-tight transition-all duration-700 tabular-nums">
+                                                {market.symbol === 'BTCUSD' ? (
+                                                    `$${market.price?.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
+                                                ) : market.symbol === 'BIST100' ? (
+                                                    market.price?.toLocaleString('tr-TR', { maximumFractionDigits: 2 })
+                                                ) : market.symbol === 'USDTRY' ? (
+                                                    market.price?.toLocaleString('tr-TR', { minimumFractionDigits: 4, maximumFractionDigits: 4 })
+                                                ) : (
+                                                    market.price?.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                                                )}
+                                            </span>
+                                            <span className={cn(
+                                                "text-sm sm:text-xl font-semibold transition-all duration-700 sm:w-28 text-left sm:text-right tabular-nums",
+                                                market.changePercent > 0 ? "text-green-500" :
+                                                    market.changePercent < 0 ? "text-red-500" :
+                                                        "text-muted-foreground"
+                                            )}>
+                                                % {market.changePercent > 0 ? '+' : ''}{market.changePercent?.toFixed(2)}
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
                         </div>
                     )}
                 </div>

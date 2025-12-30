@@ -9,6 +9,7 @@ import { PortfolioAllocationChart } from '@/components/PortfolioAllocationChart'
 import { formatCurrency, formatPercent, formatNumber, cn } from '@/lib/utils'
 import { useStockPriceUpdates } from '@/hooks/useStockPriceUpdates'
 import { getAllLogos } from '@/services/logoService'
+import { marketDebugData } from '@/services/marketDataService'
 
 import { subscribeToFund, updateFundHoldings, updateFundMultiplier, updateFundTotals, updateFundPpfRate } from '../services/firestoreService'
 import { useAdmin } from '@/contexts/AdminContext'
@@ -757,6 +758,15 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
               <CardTitle className="text-sm text-yellow-600">Debug Info (Admin Only)</CardTitle>
             </CardHeader>
             <CardContent className="text-xs font-mono space-y-1">
+              <div className="mb-2 pb-2 border-b text-[10px] break-all">
+                <p className="font-bold text-red-600 mb-1">API Diagnostics:</p>
+                <p>URL: {marketDebugData.lastUrl || 'None'}</p>
+                <p>Status: {marketDebugData.lastStatus}</p>
+                <p>Items: {marketDebugData.itemCount}</p>
+                {marketDebugData.lastError && (
+                  <p className="text-red-500">Error: {marketDebugData.lastError}</p>
+                )}
+              </div>
               <div className="mb-2 pb-2 border-b">
                 <p className="font-bold text-blue-600 mb-1">Exchange Rates (Live):</p>
                 <div className="grid grid-cols-2 gap-2">

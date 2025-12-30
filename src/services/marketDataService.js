@@ -6,6 +6,12 @@
 // Persistent cache for market data
 const CACHE_KEY = 'market_data_cache'
 const CACHE_DURATION = 1 * 60 * 1000 // Reduced to 1 minute for debugging
+export const marketDebugData = {
+    lastUrl: '',
+    lastStatus: 'Init',
+    lastError: null,
+    itemCount: 0
+}
 
 export async function fetchMarketData() {
     const cached = localStorage.getItem(CACHE_KEY);
@@ -18,12 +24,19 @@ export async function fetchMarketData() {
 
     try {
         const SHEET_API_URL = import.meta.env.VITE_SHEET_API_URL;
+        const url = `${SHEET_API_URL}?market=true&t=${Date.now()}`;
+        marketDebugData.lastUrl = url;
         // Cache busting için timestamp ekle
-        const response = await fetch(`${SHEET_API_URL}?market=true&t=${Date.now()}`);
+        const response = await fetch(url);
 
-        if (!response.ok) throw new Error('Market data fetch failed');
+        if (!response.ok) {
+            marketDebugData.lastStatus = `Failed: ${response.status}`;
+            throw new Error('Market data fetch failed');
+        }
 
         const data = await response.json();
+        marketDebugData.lastStatus = 'Success';
+        marketDebugData.itemCount = Array.isArray(data) ? data.length : 0;
         console.log('📡 Market Data Fetched:', data);
 
         // Veriyi formatla (Sheet'ten gelen format: { symbol, price, changePercent })
@@ -38,6 +51,8 @@ export async function fetchMarketData() {
         return data;
     } catch (error) {
         console.error('Market data error:', error);
+        marketDebugData.lastStatus = 'Error';
+        marketDebugData.lastError = error.message;
         return [];
     }
 }

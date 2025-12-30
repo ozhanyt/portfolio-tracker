@@ -1,4 +1,4 @@
-import { fetchMarketData } from './marketDataService';
+import { fetchMarketData, marketDebugData } from './marketDataService';
 
 /**
  * New Stock Price Service using Google Sheets API
@@ -229,7 +229,7 @@ export async function fetchExchangeRates() {
         };
 
         Object.entries(symbols).forEach(([key, symbol]) => {
-            const data = marketData.find(item => item.symbol === symbol);
+            const data = marketData.find(item => item.symbol?.toUpperCase().trim() === symbol.toUpperCase().trim());
             if (data && data.price) {
                 let prev = data.price;
                 if (data.changePercent !== undefined && data.changePercent !== null) {

@@ -37,7 +37,7 @@ function doGet(e) {
       
       data.forEach(row => {
         const symbol = String(row[0]).trim();
-        if (symbol) {
+        if (symbol && symbol !== '' && symbol !== '#N/A') {
           marketData.push({
             symbol: symbol,
             price: parseNumber(row[1]),
@@ -208,15 +208,22 @@ function getAllStockData(sheet) {
  */
 function parseNumber(value) {
   if (typeof value === 'number') return value;
-  if (!value || value === '') return null;
+  if (value === null || value === undefined || value === '') return 0;
   
-  // String'i temizle: Binlik ayracı noktaları çıkar, virgülü noktaya çevir
-  const cleaned = String(value)
-    .replace(/\./g, '')      // 1.234 -> 1234
-    .replace(',', '.');      // 1234,56 -> 1234.56
+  let s = String(value).trim();
   
-  const num = parseFloat(cleaned);
-  return isNaN(num) ? null : num;
+  // Eğer hem nokta hem virgül varsa (örn: 1.234,56) -> Binlik noktayı kaldır, virgülü noktaya çevir
+  if (s.includes('.') && s.includes(',')) {
+    s = s.replace(/\./g, '').replace(',', '.');
+  } 
+  // Sadece virgül varsa (örn: 54,33) -> Virgülü noktaya çevir
+  else if (s.includes(',')) {
+    s = s.replace(',', '.');
+  }
+  // Sadece nokta varsa ondalık kabul et (örn: 54.33)
+  
+  const num = parseFloat(s);
+  return isNaN(num) ? 0 : num;
 }
 
 /**

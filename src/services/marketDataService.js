@@ -5,7 +5,7 @@
 
 // Persistent cache for market data
 const CACHE_KEY = 'market_data_cache'
-const CACHE_DURATION = 1 * 60 * 1000 // Reduced to 1 minute for debugging
+const CACHE_DURATION = 15 * 60 * 1000 // 15 minutes
 export const marketDebugData = {
     lastUrl: '',
     lastStatus: 'Init',

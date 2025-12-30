@@ -752,58 +752,6 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
           editingStock={editingStock}
         />
 
-        {isAdmin && (
-          <Card className="mt-8 border-dashed border-2 border-yellow-500 bg-yellow-50/10">
-            <CardHeader>
-              <CardTitle className="text-sm text-yellow-600">Debug Info (Admin Only)</CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs font-mono space-y-1">
-              <div className="mb-4">
-                <button
-                  onClick={() => {
-                    localStorage.removeItem('market_data_cache');
-                    window.location.reload();
-                  }}
-                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md font-bold mb-2 shadow-sm"
-                >
-                  🚀 FORCE RELOAD RATES (Clear Cache)
-                </button>
-              </div>
-              <div className="mb-2 pb-2 border-b text-[10px] break-all">
-                <p className="font-bold text-red-600 mb-1">API Diagnostics:</p>
-                <p>URL: {marketDebugData.lastUrl || 'None'}</p>
-                <p>Status: {marketDebugData.lastStatus} {marketDebugData.isFromCache ? '(Cached)' : '(Fresh)'}</p>
-                <p>Items: {marketDebugData.itemCount}</p>
-                {marketDebugData.lastError && (
-                  <p className="text-red-500">Error: {marketDebugData.lastError}</p>
-                )}
-              </div>
-              <div className="mb-2 pb-2 border-b">
-                <p className="font-bold text-blue-600 mb-1">Exchange Rates (Live):</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {Object.entries(rates).map(([curr, data]) => (
-                    <p key={curr}>{curr}: {data.current?.toFixed(4)}</p>
-                  ))}
-                </div>
-              </div>
-              <p>Multiplier (State): {multiplier} ({typeof multiplier})</p>
-              <p>Multiplier (Parsed): {multiplierVal}</p>
-              <p>Total Value: {totalValue.toLocaleString()}</p>
-              <p>Total Cost: {totalCost.toLocaleString()}</p>
-              <p>Total Profit: {totalProfit.toLocaleString()}</p>
-              <p>PPF Rate (State): {ppfRate}</p>
-              <p>PPF Rate (Parsed): {ppfRateVal}</p>
-              <p>Sample Impact Calculation (Top Gainer):</p>
-              {finalData.length > 0 && (
-                <p>
-                  {finalData[0].code}: Profit={finalData[0].profitTL},
-                  Impact=({finalData[0].profitTL} * {multiplierVal}) / {totalCost} * 100 =
-                  {(finalData[0].profitTL * multiplierVal / totalCost * 100).toFixed(4)}%
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        )}
 
         <UpdateLogoDialog
           isOpen={isLogoDialogOpen}

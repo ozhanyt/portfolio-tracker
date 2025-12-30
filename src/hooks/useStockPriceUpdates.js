@@ -13,13 +13,13 @@ export function useStockPriceUpdates(portfolio, onUpdate, fundCode, intervalMs =
     const [isUpdating, setIsUpdating] = useState(false)
     const [error, setError] = useState(null)
     const [rates, setRates] = useState({
-        USD: { current: 34.50, prev: 34.50 },
-        EUR: { current: 37.50, prev: 37.50 },
-        CHF: { current: 39.50, prev: 39.50 },
-        CAD: { current: 25.50, prev: 25.50 },
-        DKK: { current: 5.00, prev: 5.00 },
-        NOK: { current: 3.20, prev: 3.20 },
-        GBP: { current: 44.50, prev: 44.50 },
+        USD: { current: 38.00, prev: 38.00 },
+        EUR: { current: 40.00, prev: 40.00 },
+        CHF: { current: 42.00, prev: 42.00 },
+        CAD: { current: 27.00, prev: 27.00 },
+        DKK: { current: 5.50, prev: 5.50 },
+        NOK: { current: 3.50, prev: 3.50 },
+        GBP: { current: 48.00, prev: 48.00 },
         TRY: { current: 1, prev: 1 }
     })
     const updateTimeoutRef = useRef(null)
@@ -33,8 +33,8 @@ export function useStockPriceUpdates(portfolio, onUpdate, fundCode, intervalMs =
             setRates(exchangeRates)
         }
         fetchRates()
-        // Fetch rates every hour
-        const rateInterval = setInterval(fetchRates, 3600000)
+        // Fetch rates every 5 minutes
+        const rateInterval = setInterval(fetchRates, 300000)
         return () => clearInterval(rateInterval)
     }, [])
 

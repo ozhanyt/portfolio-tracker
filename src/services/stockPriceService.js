@@ -208,13 +208,13 @@ export async function fetchExchangeRates() {
     try {
         const marketData = await fetchMarketData();
         const rates = {
-            USD: { current: 34.50, prev: 34.50 },
-            EUR: { current: 37.50, prev: 37.50 },
-            CHF: { current: 39.50, prev: 39.50 },
-            CAD: { current: 25.50, prev: 25.50 },
-            DKK: { current: 5.00, prev: 5.00 },
-            NOK: { current: 3.20, prev: 3.20 },
-            GBP: { current: 44.50, prev: 44.50 },
+            USD: { current: 38.00, prev: 38.00 },
+            EUR: { current: 40.00, prev: 40.00 },
+            CHF: { current: 42.00, prev: 42.00 },
+            CAD: { current: 27.00, prev: 27.00 },
+            DKK: { current: 5.50, prev: 5.50 },
+            NOK: { current: 3.50, prev: 3.50 },
+            GBP: { current: 48.00, prev: 48.00 },
             TRY: { current: 1, prev: 1 }
         };
 
@@ -246,13 +246,13 @@ export async function fetchExchangeRates() {
     } catch (error) {
         console.error("Error fetching exchange rates:", error);
         return {
-            USD: { current: 34.50, prev: 34.50 },
-            EUR: { current: 37.50, prev: 37.50 },
-            CHF: { current: 39.50, prev: 39.50 },
-            CAD: { current: 25.50, prev: 25.50 },
-            DKK: { current: 5.00, prev: 5.00 },
-            NOK: { current: 3.20, prev: 3.20 },
-            GBP: { current: 44.50, prev: 44.50 },
+            USD: { current: 38.00, prev: 38.00 },
+            EUR: { current: 40.00, prev: 40.00 },
+            CHF: { current: 42.00, prev: 42.00 },
+            CAD: { current: 27.00, prev: 27.00 },
+            DKK: { current: 5.50, prev: 5.50 },
+            NOK: { current: 3.50, prev: 3.50 },
+            GBP: { current: 48.00, prev: 48.00 },
             TRY: { current: 1, prev: 1 }
         };
     }

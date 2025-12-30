@@ -28,7 +28,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculateFundReturn, getCurrentTime, usdRate, prevUsdRate, onReturnUpdate }) {
+function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculateFundReturn, getCurrentTime, rates, onReturnUpdate }) {
     const {
         attributes,
         listeners,
@@ -69,7 +69,7 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
         console.error(`❌ Error updating ${fund.id}:`, error)
     }
 
-    let { totalReturn, totalValue, totalProfit } = calculateFundReturn(liveHoldings, fund.multiplier, usdRate, prevUsdRate, fund.ppfRate)
+    let { totalReturn, totalValue, totalProfit } = calculateFundReturn(liveHoldings, fund.multiplier, rates, fund.ppfRate)
 
     // Report live return to parent
     useEffect(() => {
@@ -228,8 +228,8 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
         })
     );
 
-    // Use hook just to get USD rate (pass empty portfolio)
-    const { usdRate, prevUsdRate } = useStockPriceUpdates([], null, null, 60000)
+    // Use hook just to get rates (pass empty portfolio)
+    const { rates } = useStockPriceUpdates([], null, null, 60000)
 
     // Separate hook for first fund to get live updateTime
     const firstFundHoldings = funds[0]?.holdings || []
@@ -267,25 +267,19 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
         setActiveId(null);
     };
 
-    const calculateFundReturn = (portfolio, multiplier = 1, usdRate = null, prevUsdRate = null, ppfRate = 0) => {
+    const calculateFundReturn = (portfolio, multiplier = 1, rates = {}, ppfRate = 0) => {
         if (!portfolio || portfolio.length === 0) return { totalReturn: 0, totalValue: 0, totalProfit: 0 }
 
         const calculated = portfolio.map(item => {
             let currentValue, totalCost
 
-            if (item.isForeign && usdRate) {
-                // Foreign Stock Calculation
-                // Current Value (TL) = Price (USD) * Rate * Qty
-                // Total Cost (TL) = Cost (USD/PrevClose) * PrevRate * Qty
-                const effectivePrevRate = prevUsdRate || usdRate
+            const currency = item.currency || (item.isForeign ? 'USD' : 'TRY')
+            const rateData = rates[currency] || { current: 1, prev: 1 }
+            const currentRate = rateData.current
+            const previousRate = rateData.prev
 
-                currentValue = item.quantity * item.currentPrice * usdRate
-                totalCost = item.quantity * item.cost * effectivePrevRate
-            } else {
-                // Local Stock
-                currentValue = item.quantity * item.currentPrice
-                totalCost = item.quantity * item.cost
-            }
+            currentValue = item.quantity * item.currentPrice * currentRate
+            totalCost = item.quantity * item.cost * previousRate
 
             return {
                 currentValue,
@@ -341,7 +335,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                                         code: f.id,
                                         returnRate: liveReturns[f.id] !== undefined
                                             ? liveReturns[f.id]
-                                            : calculateFundReturn(f.holdings || [], f.multiplier, usdRate, prevUsdRate, f.ppfRate).totalReturn
+                                            : calculateFundReturn(f.holdings || [], f.multiplier, rates, f.ppfRate).totalReturn
                                     }))}
                                     updateTime={liveUpdateTime}
                                 />
@@ -454,8 +448,9 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                                         handleDeleteFund={handleDeleteFund}
                                         calculateFundReturn={calculateFundReturn}
                                         getCurrentTime={getCurrentTime}
-                                        usdRate={usdRate}
-                                        prevUsdRate={prevUsdRate}
+                                        usdRate={rates?.USD?.current}
+                                        prevUsdRate={rates?.USD?.prev}
+                                        rates={rates}
                                         onReturnUpdate={(fundId, returnValue) => {
                                             setLiveReturns(prev => ({ ...prev, [fundId]: returnValue }))
                                         }}
@@ -473,8 +468,9 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                                 handleDeleteFund={handleDeleteFund}
                                 calculateFundReturn={calculateFundReturn}
                                 getCurrentTime={getCurrentTime}
-                                usdRate={usdRate}
-                                prevUsdRate={prevUsdRate}
+                                usdRate={rates?.USD?.current}
+                                prevUsdRate={rates?.USD?.prev}
+                                rates={rates}
                             />
                         ) : null}
                     </DragOverlay>

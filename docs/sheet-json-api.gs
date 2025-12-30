@@ -51,7 +51,7 @@ function doGet(e) {
     
     // EĞER FUND PARAMETRESİ YOKSA TÜM SHEET'LERİ ÇEK
     if (!params.fund) {
-      const allFunds = ['TLY', 'DFI', 'BOS', 'AFT'];
+      const allFunds = ['TLY', 'DFI', 'BOS', 'AFT', 'SSS'];
       const allResults = [];
       
       allFunds.forEach(fundName => {

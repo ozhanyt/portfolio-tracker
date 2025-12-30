@@ -1,8 +1,8 @@
 /**
- * Market Verilerini Güncelleme Scripti (Kararlı Versiyon)
+ * Market Verilerini Güncelleme Scripti (Tam & Kararlı Versiyon)
  * - Kurlar: Satır 2 ve 7-12 arası (USD, EUR, CHF, CAD, DKK, NOK, GBP)
  * - Göstergeler: BIST100(3), BTC(4), Altın(5), Gümüş(6)
- * - TEFAS: Satır 20+
+ * - TEFAS: Satır 20'den itibaren
  * - Hisseler: F Sütununda (F2:F101) listelenir, fiyatlar E ve F Sütunlarına yazılır.
  */
 function marketGuncelle() {
@@ -13,7 +13,7 @@ function marketGuncelle() {
     return;
   }
 
-  // 1. DÖVİZ KURLARI (Yatay/Dikey Karışık Düzen)
+  // 1. DÖVİZ KURLARI (Dikey Düzen: 2-12 Satır)
   const currencies = [
     { code: "TRY=X", name: "USDTRY", row: 2 },
     { code: "EURTRY=X", name: "EURTRY", row: 7 },
@@ -24,9 +24,9 @@ function marketGuncelle() {
     { code: "GBPTRY=X", name: "GBPTRY", row: 12 }
   ];
 
-  Logger.log("Döviz kurları çekiliyor...");
-  let currentUsdTry = 34.50; // Fallback
+  let currentUsdTry = 34.50; // Fallback değeri
 
+  Logger.log("Döviz kurları çekiliyor...");
   currencies.forEach(curr => {
     const data = fetchYahooStable(curr.code);
     if (data.price) {
@@ -59,34 +59,40 @@ function marketGuncelle() {
     sheet.getRange(4, 3).setValue(btc.changePercent / 100);
   }
 
-  // GRAM ALTIN (Satır 5)
-  const goldGlobal = fetchYahooStable("GC=F");
-  if (goldGlobal.price) {
-    const gramAltinTL = ((goldGlobal.price - 32) / 31.1035) * currentUsdTry;
-    sheet.getRange(5, 1).setValue("GOLD_TL");
-    sheet.getRange(5, 2).setValue(gramAltinTL);
-    sheet.getRange(5, 3).setValue(goldGlobal.changePercent / 100);
-  }
+  // Gram Altın & GÜmüş (USDTRY baz alınarak hesaplanır)
+  if (currentUsdTry) {
+    // GRAM ALTIN (Satır 5)
+    const goldGlobal = fetchYahooStable("GC=F");
+    if (goldGlobal.price) {
+      const gramAltinTL = ((goldGlobal.price - 32) / 31.1035) * currentUsdTry;
+      sheet.getRange(5, 1).setValue("GOLD_TL");
+      sheet.getRange(5, 2).setValue(gramAltinTL);
+      sheet.getRange(5, 3).setValue(goldGlobal.changePercent / 100);
+    }
 
-  // GRAM GÜMÜŞ (Satır 6)
-  const silverGlobal = fetchYahooStable("SI=F");
-  if (silverGlobal.price) {
-    const gramGumusTL = ((silverGlobal.price - 0.55) / 31.1035) * currentUsdTry;
-    sheet.getRange(6, 1).setValue("SILVER_TL");
-    sheet.getRange(6, 2).setValue(gramGumusTL);
-    sheet.getRange(6, 3).setValue(silverGlobal.changePercent / 100);
+    // GRAM GÜMÜŞ (Satır 6)
+    const silverGlobal = fetchYahooStable("SI=F");
+    if (silverGlobal.price) {
+      const gramGumusTL = ((silverGlobal.price - 0.55) / 31.1035) * currentUsdTry;
+      sheet.getRange(6, 1).setValue("SILVER_TL");
+      sheet.getRange(6, 2).setValue(gramGumusTL);
+      sheet.getRange(6, 3).setValue(silverGlobal.changePercent / 100);
+    }
   }
 
   // 3. TEFAS FONLARI (Satır 20'den itibaren)
-  tefasFiyatlariGuncelle(sheet);
+  tefasGuncelle(sheet);
 
   // 4. HİSSE FİYATLARI (F Sütunu okunur, E ve F sütunlarına yazılır)
-  hisseFiyatlariGuncelle(sheet);
+  hisseGuncelle(sheet);
 
   Logger.log("=== Market Güncelleme Bitti ===");
 }
 
-function tefasFiyatlariGuncelle(sheet) {
+/**
+ * TEFAS Fonlarını Güncelleme
+ */
+function tefasGuncelle(sheet) {
   Logger.log("TEFAS fonları güncelleniyor...");
   const fonlar = [
     "ADP", "DOH", "THV", "AN1", "DL2", "TP2", "TLV", "TLY", "TMM", "TRJ", "TRU", "YEF", "THF", "IOG"
@@ -98,7 +104,7 @@ function tefasFiyatlariGuncelle(sheet) {
     try {
       const data = fetchTefasWithCache(kod, "YAT");
       if (data.success) {
-        Logger.log(`TEFAS: ${kod} -> ${data.price}`);
+        Logger.log(`TEFAS: ${kod} -> ${data.price} (Satır ${row})`);
         sheet.getRange(row, 1).setValue(kod);
         sheet.getRange(row, 2).setValue(data.name);
         sheet.getRange(row, 3).setValue(data.price);
@@ -110,7 +116,10 @@ function tefasFiyatlariGuncelle(sheet) {
   });
 }
 
-function hisseFiyatlariGuncelle(sheet) {
+/**
+ * Hisse Fiyatlarını Güncelleme (F -> E,F)
+ */
+function hisseGuncelle(sheet) {
   Logger.log("Hisse fiyatları güncelleniyor...");
   const startRow = 2;
   const codes = sheet.getRange(startRow, 6, 100, 1).getValues();
@@ -126,11 +135,12 @@ function hisseFiyatlariGuncelle(sheet) {
       sheet.getRange(row, 5).setValue(data.previousClose); // E Sütunu
       sheet.getRange(row, 6).setValue(data.price);         // F Sütunu
     }
+    Utilities.sleep(50);
   }
 }
 
 /**
- * Yahoo Finance v8 (Stable Endpoint)
+ * Yahoo Finance v8 (Kararlı Endpoint)
  */
 function fetchYahooStable(symbol) {
   const cache = CacheService.getScriptCache();
@@ -161,7 +171,7 @@ function fetchYahooStable(symbol) {
 }
 
 /**
- * TEFAS API with Cache
+ * TEFAS API Sorgusu (Cache'li)
  */
 function fetchTefasWithCache(fundCode, fundType) {
   const cache = CacheService.getScriptCache();
@@ -187,7 +197,7 @@ function fetchTefasWithCache(fundCode, fundType) {
     });
     
     const json = JSON.parse(response.getContentText());
-    if (json.fundInfo?.length > 0) {
+    if (json.fundInfo && json.fundInfo.length > 0) {
       const fund = json.fundInfo[0];
       const price = parseFloat(fund.SONFIYAT);
       const ret = parseFloat(fund.GUNLUKGETIRI || 0);

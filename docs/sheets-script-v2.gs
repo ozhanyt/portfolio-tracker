@@ -120,20 +120,16 @@ function tefasGuncelle(sheet) {
  * Hisse Fiyatlarını Güncelleme (F -> E,F)
  */
 function hisseGuncelle(sheet) {
-  Logger.log("Hisse fiyatları güncelleniyor...");
-  const startRow = 2;
-  const codes = sheet.getRange(startRow, 6, 100, 1).getValues();
-
+  Logger.log("Hisse fiyatları (F:H) güncelleniyor...");
+  const codes = sheet.getRange(2, 6, 100, 1).getValues();
   for (let i = 0; i < codes.length; i++) {
-    const symbol = String(codes[i][0]).trim();
-    if (!symbol || symbol === "" || symbol === "#N/A") continue;
-
-    const row = startRow + i;
-    const data = fetchYahooStable(symbol);
+    const sym = String(codes[i][0]).trim();
+    if (!sym || sym === "" || sym === "#N/A") continue;
+    const data = fetchYahooStable(sym);
     if (data.price) {
-      Logger.log(`${symbol} -> ${data.price} (Satır ${row})`);
-      sheet.getRange(row, 5).setValue(data.previousClose); // E Sütunu
-      sheet.getRange(row, 6).setValue(data.price);         // F Sütunu
+      Logger.log(`${sym} -> ${data.price} (Satır ${i+2})`);
+      sheet.getRange(i+2, 7).setValue(data.previousClose);
+      sheet.getRange(i+2, 8).setValue(data.price);
     }
     Utilities.sleep(50);
   }

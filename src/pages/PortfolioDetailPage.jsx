@@ -170,25 +170,27 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     })
   }
 
-  const { lastUpdate, isUpdating, error, usdRate, prevUsdRate } = useStockPriceUpdates(portfolio, handlePriceUpdate, fundCode, 60000)
+  const { lastUpdate, isUpdating, error, rates } = useStockPriceUpdates(portfolio, handlePriceUpdate, fundCode, 60000)
 
   // Calculate portfolio values
   const calculatedPortfolio = portfolio.map(item => {
     let currentValue, totalCost, profitTL
 
-    if (item.isForeign) {
-      // Foreign Stock Calculation (Method B)
+    // Determine the currency and its rates
+    const currency = item.currency || (item.isForeign ? 'USD' : 'TRY')
+    const rateData = rates[currency] || { current: 1, prev: 1 }
+
+    const currentRate = rateData.current
+    const previousRate = rateData.prev
+
+    if (currency !== 'TRY') {
+      // Foreign Currency Calculation
       // Profit = (Current Price * Current Rate) - (Prev Close * Prev Rate)
-      // Note: item.cost is synced with prevClose for daily tracking
-
-      const currentRate = usdRate || 34.50
-      const previousRate = prevUsdRate || currentRate // Fallback to current if prev not available
-
       const currentPriceTL = item.currentPrice * currentRate
-      const prevPriceTL = item.cost * previousRate // item.cost is effectively prevClose
+      const prevPriceTL = item.cost * previousRate // item.cost is synced with prevClose
 
       currentValue = currentPriceTL * item.quantity
-      totalCost = prevPriceTL * item.quantity // This is the "Daily Cost" basis
+      totalCost = prevPriceTL * item.quantity
       profitTL = currentValue - totalCost
     } else {
       // Local Stock Calculation
@@ -203,7 +205,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
       totalCost,
       profitTL,
       returnRate: totalCost > 0 ? (profitTL / totalCost) * 100 : 0,
-      originalCurrency: item.isForeign ? 'USD' : 'TRY'
+      originalCurrency: currency
     }
   })
 
@@ -477,10 +479,14 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
               )}
             </div>
 
-            {usdRate && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-green-50/50 dark:bg-green-900/20 text-xs text-green-700 dark:text-green-400 border border-green-100 dark:border-green-900/50">
-                <span className="font-semibold">USD:</span>
-                <span>{usdRate.toFixed(4)} TL</span>
+            {rates && (
+              <div className="hidden md:flex items-center gap-2">
+                {Object.entries(rates).filter(([key]) => key !== 'TRY').map(([key, data]) => (
+                  <div key={key} className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/30 text-[10px] text-muted-foreground border border-muted/50">
+                    <span className="font-semibold">{key}:</span>
+                    <span>{data.current.toFixed(4)}</span>
+                  </div>
+                ))}
               </div>
             )}
 

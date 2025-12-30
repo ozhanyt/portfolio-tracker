@@ -12,7 +12,7 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
         quantity: '',
         prevClose: '',
         currentPrice: '',
-        isForeign: false
+        currency: 'TRY'
     })
     const [isManual, setIsManual] = useState(false)
     const [isFundEntry, setIsFundEntry] = useState(false)
@@ -24,7 +24,7 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                 quantity: (editingStock.quantity || 0).toString(),
                 prevClose: '',
                 currentPrice: '',
-                isForeign: editingStock.isForeign || false
+                currency: editingStock.currency || (editingStock.isForeign ? 'USD' : 'TRY')
             })
             const isFundVal = isFund(editingStock.code || '', editingStock.isForeign)
             setIsFundEntry(isFundVal)
@@ -36,7 +36,7 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                 quantity: '',
                 prevClose: '',
                 currentPrice: '',
-                isForeign: false
+                currency: 'TRY'
             })
             setIsFundEntry(false)
             setIsManual(false)
@@ -44,17 +44,18 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
         setError(null)
     }, [editingStock, isOpen])
 
-    // Check if code is a fund when typing or when isForeign changes
+    // Check if code is a fund when typing or when currency changes
     useEffect(() => {
         if (formData.code) {
-            const isFundVal = isFund(formData.code, formData.isForeign)
+            const isForeignVal = formData.currency !== 'TRY'
+            const isFundVal = isFund(formData.code, isForeignVal)
             setIsFundEntry(isFundVal)
             // Auto-enable manual mode for funds by default when typing new code
             if (!editingStock) {
                 setIsManual(isFundVal)
             }
         }
-    }, [formData.code, formData.isForeign])
+    }, [formData.code, formData.currency])
 
     if (!isOpen) return null
 
@@ -64,6 +65,8 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
         setError(null)
 
         try {
+            const isForeignVal = formData.currency !== 'TRY'
+
             if (isManual) {
                 // Manual entry
                 if (!formData.prevClose || !formData.currentPrice) {
@@ -76,14 +79,16 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                     cost: Number(formData.prevClose),
                     prevClose: Number(formData.prevClose),
                     currentPrice: Number(formData.currentPrice),
-                    isManual: true
+                    isManual: true,
+                    isForeign: isForeignVal,
+                    currency: formData.currency
                 })
 
-                setFormData({ code: '', quantity: '', prevClose: '', currentPrice: '' })
+                setFormData({ code: '', quantity: '', prevClose: '', currentPrice: '', currency: 'TRY' })
                 onClose()
             } else {
                 // Auto-fetch for stocks
-                const result = await fetchStockPrice(formData.code.toUpperCase(), { isForeign: formData.isForeign })
+                const result = await fetchStockPrice(formData.code.toUpperCase(), { isForeign: isForeignVal })
 
                 if (!result.success) {
                     throw new Error('Hisse verisi alınamadı. Kodu kontrol edin veya Manuel Girişi seçin.')
@@ -96,11 +101,11 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                     prevClose: result.prevClose,
                     currentPrice: result.currentPrice,
                     isManual: false,
-                    isForeign: formData.isForeign,
-                    currency: formData.isForeign ? 'USD' : 'TRY'
+                    isForeign: isForeignVal,
+                    currency: formData.currency
                 })
 
-                setFormData({ code: '', quantity: '', prevClose: '', currentPrice: '', isForeign: false })
+                setFormData({ code: '', quantity: '', prevClose: '', currentPrice: '', currency: 'TRY' })
                 onClose()
             }
         } catch (err) {
@@ -140,20 +145,22 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                             />
                         </div>
 
-                        <div className="flex items-center space-x-2 py-2">
-                            <input
-                                type="checkbox"
-                                id="isForeign"
-                                checked={formData.isForeign || false}
-                                onChange={(e) => setFormData({ ...formData, isForeign: e.target.checked })}
-                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                            />
-                            <label
-                                htmlFor="isForeign"
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Para Birimi</label>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                value={formData.currency}
+                                onChange={e => setFormData({ ...formData, currency: e.target.value })}
                             >
-                                Yabancı Hisse (USD)
-                            </label>
+                                <option value="TRY">TRY (Türk Lirası)</option>
+                                <option value="USD">USD (Amerikan Doları)</option>
+                                <option value="EUR">EUR (Euro)</option>
+                                <option value="CHF">CHF (İsviçre Frangı)</option>
+                                <option value="CAD">CAD (Kanada Doları)</option>
+                                <option value="DKK">DKK (Danimarka Kronu)</option>
+                                <option value="NOK">NOK (Norveç Kronu)</option>
+                                <option value="GBP">GBP (İngiliz Sterlini)</option>
+                            </select>
                         </div>
 
                         <div className="flex items-center space-x-2 py-2">

@@ -12,25 +12,29 @@ export function useStockPriceUpdates(portfolio, onUpdate, fundCode, intervalMs =
     const [lastUpdate, setLastUpdate] = useState(null)
     const [isUpdating, setIsUpdating] = useState(false)
     const [error, setError] = useState(null)
-    const [usdRate, setUsdRate] = useState(null)
-    const [prevUsdRate, setPrevUsdRate] = useState(null)
+    const [rates, setRates] = useState({
+        USD: { current: 34.50, prev: 34.50 },
+        EUR: { current: 37.50, prev: 37.50 },
+        CHF: { current: 39.50, prev: 39.50 },
+        CAD: { current: 25.50, prev: 25.50 },
+        DKK: { current: 5.00, prev: 5.00 },
+        NOK: { current: 3.20, prev: 3.20 },
+        GBP: { current: 44.50, prev: 44.50 },
+        TRY: { current: 1, prev: 1 }
+    })
     const updateTimeoutRef = useRef(null)
     // Create a key that changes only when codes or isManual/isForeign flags change
     const portfolioKey = portfolio.map(p => `${p.code}-${p.isManual}-${p.isForeign}`).join('|')
 
-    // Fetch USD Rate on mount and periodically
+    // Fetch Rates on mount and periodically
     useEffect(() => {
-        const fetchRate = async () => {
-            // Fetch USD Rate from Yahoo (15:30 snapshot or latest)
-            const rates = await fetchUSDTRYRate()
-            if (rates && rates.currentRate) {
-                setUsdRate(rates.currentRate)
-                setPrevUsdRate(rates.prevRate)
-            }
+        const fetchRates = async () => {
+            const exchangeRates = await fetchExchangeRates()
+            setRates(exchangeRates)
         }
-        fetchRate()
-        // Fetch rate every hour
-        const rateInterval = setInterval(fetchRate, 3600000)
+        fetchRates()
+        // Fetch rates every hour
+        const rateInterval = setInterval(fetchRates, 3600000)
         return () => clearInterval(rateInterval)
     }, [])
 
@@ -112,7 +116,6 @@ export function useStockPriceUpdates(portfolio, onUpdate, fundCode, intervalMs =
         lastUpdate,
         isUpdating,
         error,
-        usdRate,
-        prevUsdRate
+        rates
     }
 }

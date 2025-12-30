@@ -202,37 +202,58 @@ export async function fetchIntradayHistory(symbol, options = {}) {
 
 
 /**
- * USD/TRY kuru
+ * Doviz kurlarını (USD, EUR, CHF, CAD, DKK, NOK, GBP) getir
  */
-export async function fetchUSDTRYRate() {
+export async function fetchExchangeRates() {
     try {
         const marketData = await fetchMarketData();
-        const usdData = marketData.find(item => item.symbol === 'USDTRY');
-
-        if (usdData && usdData.price) {
-            // Calculate previous rate from change percent
-            // change = ((current - prev) / prev) * 100
-            // prev = current / (1 + change/100)
-            let prevRate = usdData.price;
-            if (usdData.changePercent !== undefined && usdData.changePercent !== null) {
-                prevRate = usdData.price / (1 + (usdData.changePercent / 100));
-            }
-
-            return {
-                currentRate: usdData.price,
-                prevRate: prevRate
-            };
-        }
-
-        return {
-            currentRate: 34.50,
-            prevRate: 34.50
+        const rates = {
+            USD: { current: 34.50, prev: 34.50 },
+            EUR: { current: 37.50, prev: 37.50 },
+            CHF: { current: 39.50, prev: 39.50 },
+            CAD: { current: 25.50, prev: 25.50 },
+            DKK: { current: 5.00, prev: 5.00 },
+            NOK: { current: 3.20, prev: 3.20 },
+            GBP: { current: 44.50, prev: 44.50 },
+            TRY: { current: 1, prev: 1 }
         };
+
+        const symbols = {
+            USD: 'USDTRY',
+            EUR: 'EURTRY',
+            CHF: 'CHFTRY',
+            CAD: 'CADTRY',
+            DKK: 'DKKTRY',
+            NOK: 'NOKTRY',
+            GBP: 'GBPTRY'
+        };
+
+        Object.entries(symbols).forEach(([key, symbol]) => {
+            const data = marketData.find(item => item.symbol === symbol);
+            if (data && data.price) {
+                let prev = data.price;
+                if (data.changePercent !== undefined && data.changePercent !== null) {
+                    prev = data.price / (1 + (data.changePercent / 100));
+                }
+                rates[key] = {
+                    current: data.price,
+                    prev: prev
+                };
+            }
+        });
+
+        return rates;
     } catch (error) {
-        console.error("Error fetching USDTRY rate:", error);
+        console.error("Error fetching exchange rates:", error);
         return {
-            currentRate: 34.50,
-            prevRate: 34.50
+            USD: { current: 34.50, prev: 34.50 },
+            EUR: { current: 37.50, prev: 37.50 },
+            CHF: { current: 39.50, prev: 39.50 },
+            CAD: { current: 25.50, prev: 25.50 },
+            DKK: { current: 5.00, prev: 5.00 },
+            NOK: { current: 3.20, prev: 3.20 },
+            GBP: { current: 44.50, prev: 44.50 },
+            TRY: { current: 1, prev: 1 }
         };
     }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { fetchStockPrices, fetchUSDTRYRate, fetchFundHoldings } from '@/services/stockPriceService'
+import { fetchStockPrices, fetchExchangeRates, fetchFundHoldings } from '@/services/stockPriceService'
 
 /**
  * Hook to automatically update stock prices at regular intervals

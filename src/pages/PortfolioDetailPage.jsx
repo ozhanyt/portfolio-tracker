@@ -761,7 +761,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
               <div className="mb-2 pb-2 border-b text-[10px] break-all">
                 <p className="font-bold text-red-600 mb-1">API Diagnostics:</p>
                 <p>URL: {marketDebugData.lastUrl || 'None'}</p>
-                <p>Status: {marketDebugData.lastStatus}</p>
+                <p>Status: {marketDebugData.lastStatus} {marketDebugData.isFromCache ? '(Cached)' : '(Fresh)'}</p>
                 <p>Items: {marketDebugData.itemCount}</p>
                 {marketDebugData.lastError && (
                   <p className="text-red-500">Error: {marketDebugData.lastError}</p>

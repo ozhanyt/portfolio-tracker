@@ -10,7 +10,8 @@ export const marketDebugData = {
     lastUrl: '',
     lastStatus: 'Init',
     lastError: null,
-    itemCount: 0
+    itemCount: 0,
+    isFromCache: false
 }
 
 export async function fetchMarketData() {
@@ -18,9 +19,14 @@ export async function fetchMarketData() {
     if (cached) {
         const { timestamp, data } = JSON.parse(cached);
         if (Date.now() - timestamp < CACHE_DURATION) {
+            marketDebugData.lastStatus = 'Success (Cached)';
+            marketDebugData.itemCount = Array.isArray(data) ? data.length : 0;
+            marketDebugData.isFromCache = true;
             return data;
         }
     }
+
+    marketDebugData.isFromCache = false;
 
     try {
         const SHEET_API_URL = import.meta.env.VITE_SHEET_API_URL;

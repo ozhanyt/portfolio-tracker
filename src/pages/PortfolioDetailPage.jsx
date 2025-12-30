@@ -758,6 +758,17 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
               <CardTitle className="text-sm text-yellow-600">Debug Info (Admin Only)</CardTitle>
             </CardHeader>
             <CardContent className="text-xs font-mono space-y-1">
+              <div className="mb-4">
+                <button
+                  onClick={() => {
+                    localStorage.removeItem('market_data_cache');
+                    window.location.reload();
+                  }}
+                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md font-bold mb-2 shadow-sm"
+                >
+                  🚀 FORCE RELOAD RATES (Clear Cache)
+                </button>
+              </div>
               <div className="mb-2 pb-2 border-b text-[10px] break-all">
                 <p className="font-bold text-red-600 mb-1">API Diagnostics:</p>
                 <p>URL: {marketDebugData.lastUrl || 'None'}</p>

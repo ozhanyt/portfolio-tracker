@@ -230,14 +230,14 @@ function parseNumber(value) {
  * JSON response oluştur
  */
 function createJsonResponse(data, statusCode = 200) {
-  const output = ContentService.createTextOutput(JSON.stringify(data))
+  const jsonString = JSON.stringify(data);
+  const output = ContentService.createTextOutput(jsonString)
     .setMimeType(ContentService.MimeType.JSON);
   
-  // CORS header ekle (React'ten erişim için)
-  if (statusCode !== 200) {
-    // Apps Script'te HTTP status code set edilemiyor, sadece header'da belirtilebilir
-    return output;
-  }
+  // Apps Script Web Apps handle CORS automatically by redirecting, 
+  // but adding headers can sometimes help with specific client libraries.
+  // Note: Standard 'Access-Control-Allow-Origin' header is not directly settable in TextOutput,
+  // Google handles this via the macro redirect mechanism.
   
   return output;
 }

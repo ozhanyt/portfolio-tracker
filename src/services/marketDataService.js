@@ -48,11 +48,15 @@ export async function fetchMarketData() {
         // Veriyi formatla (Sheet'ten gelen format: { symbol, price, changePercent })
         // UI'ın beklediği format: { symbol, price, changePercent } (Aynı)
 
-        // Cache'le
-        localStorage.setItem(CACHE_KEY, JSON.stringify({
-            timestamp: Date.now(),
-            data
-        }));
+        // Cache'le (SADECE veri varsa)
+        if (Array.isArray(data) && data.length > 0) {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+                timestamp: Date.now(),
+                data
+            }));
+        } else {
+            console.warn('⚠️ Market API returned empty data. Not caching.');
+        }
 
         return data;
     } catch (error) {

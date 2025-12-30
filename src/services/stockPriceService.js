@@ -239,6 +239,8 @@ export async function fetchExchangeRates() {
                     current: data.price,
                     prev: prev
                 };
+            } else {
+                console.warn(`⚠️ Rate for ${key} (${symbol}) not found in market data. Using fallback.`);
             }
         });
 

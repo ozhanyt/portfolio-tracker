@@ -5,7 +5,7 @@
 
 // Persistent cache for market data
 const CACHE_KEY = 'market_data_cache'
-const CACHE_DURATION = 15 * 60 * 1000 // 15 minutes to reduce quota usage
+const CACHE_DURATION = 1 * 60 * 1000 // Reduced to 1 minute for debugging
 
 export async function fetchMarketData() {
     const cached = localStorage.getItem(CACHE_KEY);
@@ -24,6 +24,7 @@ export async function fetchMarketData() {
         if (!response.ok) throw new Error('Market data fetch failed');
 
         const data = await response.json();
+        console.log('📡 Market Data Fetched:', data);
 
         // Veriyi formatla (Sheet'ten gelen format: { symbol, price, changePercent })
         // UI'ın beklediği format: { symbol, price, changePercent } (Aynı)

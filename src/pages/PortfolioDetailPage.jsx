@@ -757,11 +757,19 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
               <CardTitle className="text-sm text-yellow-600">Debug Info (Admin Only)</CardTitle>
             </CardHeader>
             <CardContent className="text-xs font-mono space-y-1">
+              <div className="mb-2 pb-2 border-b">
+                <p className="font-bold text-blue-600 mb-1">Exchange Rates (Live):</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.entries(rates).map(([curr, data]) => (
+                    <p key={curr}>{curr}: {data.current?.toFixed(4)}</p>
+                  ))}
+                </div>
+              </div>
               <p>Multiplier (State): {multiplier} ({typeof multiplier})</p>
               <p>Multiplier (Parsed): {multiplierVal}</p>
-              <p>Total Value: {totalValue}</p>
-              <p>Total Cost: {totalCost}</p>
-              <p>Total Profit: {totalProfit}</p>
+              <p>Total Value: {totalValue.toLocaleString()}</p>
+              <p>Total Cost: {totalCost.toLocaleString()}</p>
+              <p>Total Profit: {totalProfit.toLocaleString()}</p>
               <p>PPF Rate (State): {ppfRate}</p>
               <p>PPF Rate (Parsed): {ppfRateVal}</p>
               <p>Sample Impact Calculation (Top Gainer):</p>

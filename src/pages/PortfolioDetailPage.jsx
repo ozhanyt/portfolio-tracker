@@ -479,16 +479,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
               )}
             </div>
 
-            {rates && (
-              <div className="hidden md:flex items-center gap-2">
-                {Object.entries(rates).filter(([key]) => key !== 'TRY').map(([key, data]) => (
-                  <div key={key} className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/30 text-[10px] text-muted-foreground border border-muted/50">
-                    <span className="font-semibold">{key}:</span>
-                    <span>{data.current.toFixed(4)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Header simplified as per user request */}
 
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}

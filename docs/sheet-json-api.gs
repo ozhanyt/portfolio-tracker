@@ -108,45 +108,43 @@ function doGet(e) {
 
 /**
  * Tek bir hisse verisini al
+ * Fallback: Eğer sheet'te yoksa Yahoo Finance'ten çekmeyi dener
  */
 function getStockData(sheet, symbol) {
   const lastRow = sheet.getLastRow();
-  
-  // B sütunu = Hisse Kodu
-  const codes = sheet.getRange(2, 2, lastRow - 1, 1).getValues().flat();
-  
-  // Hisseyi bul
-  // Hisseyi bul
-  const rowIndex = codes.findIndex(code => {
-    let c = String(code).trim();
-    c = c.replace(/ FONU$/i, ''); // Remove " FONU" suffix
-    return c.toUpperCase() === symbol.toUpperCase();
-  });
-  
-  if (rowIndex === -1) {
-    return {
-      code: symbol,
-      success: false,
-      error: 'Symbol not found'
-    };
+  let foundData = null;
+
+  if (lastRow > 1) {
+    // B sütunu = Hisse Kodu
+    const codes = sheet.getRange(2, 2, lastRow - 1, 1).getValues().flat();
+    
+    // Hisseyi bul
+    const rowIndex = codes.findIndex(code => {
+      let c = String(code).trim();
+      c = c.replace(/ FONU$/i, ''); // Remove " FONU" suffix
+      return c.toUpperCase() === symbol.toUpperCase();
+    });
+    
+    if (rowIndex !== -1) {
+      const actualRow = rowIndex + 2; // 0-indexed + header row
+      const rowData = sheet.getRange(actualRow, 2, 1, 5).getValues()[0];
+      
+      foundData = {
+        code: String(rowData[0]).trim(),
+        currentPrice: parseNumber(rowData[4]),  // F sütunu
+        prevClose: parseNumber(rowData[3]),     // E sütunu
+        quantity: parseNumber(rowData[2]),      // D sütunu
+        success: true
+      };
+    }
   }
-  
-  const actualRow = rowIndex + 2; // 0-indexed + header row
-  
-  // Sütunları al (B=2, D=4, E=5, F=6)
-  // B: Hisse Kodu
-  // D: Adet
-  // E: Önceki Kapanış
-  // F: Bugünkü Fiyat
-  
-  const rowData = sheet.getRange(actualRow, 2, 1, 5).getValues()[0];
-  
+
+  if (foundData) return foundData;
+
   return {
-    code: String(rowData[0]).trim(),
-    currentPrice: parseNumber(rowData[4]),  // F sütunu (6-2=4, 0-indexed)
-    prevClose: parseNumber(rowData[3]),     // E sütunu (5-2=3)
-    quantity: parseNumber(rowData[2]),      // D sütunu (4-2=2)
-    success: true
+    code: symbol,
+    success: false,
+    error: 'Symbol not found in sheet'
   };
 }
 

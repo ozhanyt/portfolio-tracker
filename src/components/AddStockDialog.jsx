@@ -27,9 +27,11 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                 currency: editingStock.currency || (editingStock.isForeign ? 'USD' : 'TRY')
             })
             const isFundVal = isFund(editingStock.code || '', editingStock.isForeign)
+            const isLongName = (editingStock.code || '').length > 15
             setIsFundEntry(isFundVal)
-            // If editing, preserve existing isManual setting, or default to true for funds if not set
-            setIsManual(editingStock.isManual !== undefined ? editingStock.isManual : isFundVal)
+            // If editing, preserve existing isManual setting. 
+            // Default to true for funds or long descriptive names if not set.
+            setIsManual(editingStock.isManual !== undefined ? editingStock.isManual : (isFundVal || isLongName))
         } else {
             setFormData({
                 code: '',
@@ -49,10 +51,11 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
         if (formData.code) {
             const isForeignVal = formData.currency !== 'TRY'
             const isFundVal = isFund(formData.code, isForeignVal)
+            const isLongName = formData.code.length > 15
             setIsFundEntry(isFundVal)
-            // Auto-enable manual mode for funds by default when typing new code
+            // Auto-enable manual mode for funds or long descriptive names by default when typing new code
             if (!editingStock) {
-                setIsManual(isFundVal)
+                setIsManual(isFundVal || isLongName)
             }
         }
     }, [formData.code, formData.currency])
@@ -87,19 +90,15 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                 setFormData({ code: '', quantity: '', prevClose: '', currentPrice: '', currency: 'TRY' })
                 onClose()
             } else {
-                // Auto-fetch for stocks
+                // Auto-fetch for stocks from Sheet
                 const result = await fetchStockPrice(formData.code.toUpperCase(), { isForeign: isForeignVal })
 
-                if (!result.success) {
-                    throw new Error('Hisse verisi alınamadı. Kodu kontrol edin veya Manuel Girişi seçin.')
-                }
-
                 onAdd({
-                    code: result.code,
+                    code: result.success ? result.code : formData.code.toUpperCase(),
                     quantity: Number(formData.quantity),
-                    cost: result.prevClose,
-                    prevClose: result.prevClose,
-                    currentPrice: result.currentPrice,
+                    cost: result.success ? result.prevClose : 0,
+                    prevClose: result.success ? result.prevClose : 0,
+                    currentPrice: result.success ? result.currentPrice : 0,
                     isManual: false,
                     isForeign: isForeignVal,
                     currency: formData.currency

@@ -53,5 +53,10 @@ export function formatPercent(value) {
 export function isFund(code, isForeign = false) {
     if (!code) return false
     if (isForeign) return false
+
+    // Eğer kod çok uzunsa (15 karakterden fazla), muhtemelen bir isimdir, borsa kodu değil.
+    // Bu durumda TEFAS fonu olarak değerlendirme.
+    if (code.length > 15) return false
+
     return code.length === 3 || code.toUpperCase().includes('FON')
 }

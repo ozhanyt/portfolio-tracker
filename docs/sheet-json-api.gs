@@ -25,6 +25,21 @@ function doGet(e) {
   try {
     const params = e.parameter;
     
+    // SINGLE SYMBOL QUOTE (Market Sheet F2/F3 logic)
+    if (params.symbol && !params.fund && !params.market) {
+      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Market');
+      if (sheet) {
+        sheet.getRange('F2').setValue(params.symbol);
+        SpreadsheetApp.flush(); // Ensure formulas update
+        const price = parseNumber(sheet.getRange('F3').getValue());
+        return createJsonResponse({
+          symbol: params.symbol,
+          price: price,
+          success: true
+        });
+      }
+    }
+    
     // MARKET DATA İSTEĞİ
     if (params.market) {
       const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Market');

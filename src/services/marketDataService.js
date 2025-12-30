@@ -32,14 +32,9 @@ export async function fetchMarketData() {
         const SHEET_API_URL = import.meta.env.VITE_SHEET_API_URL;
         const url = `${SHEET_API_URL}?market=true&t=${Date.now()}`;
         marketDebugData.lastUrl = url;
-        // Cache-busting headers and mode
-        const response = await fetch(url, {
-            cache: 'no-store',
-            headers: {
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache'
-            }
-        });
+
+        // Simple fetch without custom headers to avoid CORS preflight (OPTIONS)
+        const response = await fetch(url);
 
         if (!response.ok) {
             marketDebugData.lastStatus = `Failed: ${response.status}`;

@@ -32,12 +32,13 @@ function doGet(e) {
         return createJsonResponse({ error: 'Market sheet not found' }, 404);
       }
       
-      const data = sheet.getRange(2, 1, 15, 3).getValues(); // A2:C16 (15 satır, 3 sütun)
+      const lastRow = sheet.getLastRow() > 16 ? 16 : sheet.getLastRow();
+      const data = sheet.getRange(2, 1, lastRow - 1, 3).getValues(); 
       const marketData = [];
       
       data.forEach(row => {
         const symbol = String(row[0]).trim();
-        if (symbol && symbol !== '' && symbol !== '#N/A') {
+        if (symbol && symbol !== '' && symbol !== '#N/A' && symbol !== 'undefined') {
           marketData.push({
             symbol: symbol,
             price: parseNumber(row[1]),

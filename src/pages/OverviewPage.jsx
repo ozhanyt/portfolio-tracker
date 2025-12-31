@@ -51,8 +51,19 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
 
     // Use hook for THIS fund to get correct time and data
     const { error } = useStockPriceUpdates(fund.holdings, (updatedHoldings) => {
-        // console.log(`🔄 Update for ${fund.id}:`, updatedHoldings)
-        setLiveHoldings(updatedHoldings)
+        setLiveHoldings(currentHoldings => {
+            // MERGE incoming prices with current metadata (isForeign, currency, etc)
+            return updatedHoldings.map(newItem => {
+                const existing = (fund.holdings || []).find(h => h.code === newItem.code);
+                return {
+                    ...newItem,
+                    isForeign: existing?.isForeign ?? newItem.isForeign,
+                    currency: existing?.currency ?? newItem.currency,
+                    // Keep the quantity from the original fund data or the new one
+                    quantity: newItem.quantity || existing?.quantity || 0
+                };
+            });
+        })
 
         // Find update time from any stock
         const time = updatedHoldings.find(h => h.updateTime)?.updateTime
@@ -267,6 +278,15 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
         setActiveId(null);
     };
 
+    // Helper to parse potential Turkish formatted numbers (e.g. 0,85)
+    const parseTurkishFloat = (val) => {
+        if (typeof val === 'number') return val
+        if (typeof val === 'string') {
+            return parseFloat(val.replace(',', '.'))
+        }
+        return 0
+    }
+
     const calculateFundReturn = (portfolio, multiplier = 1, rates = {}, ppfRate = 0) => {
         if (!portfolio || portfolio.length === 0) return { totalReturn: 0, totalValue: 0, totalProfit: 0 }
 
@@ -293,10 +313,13 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
         let totalProfit = totalValue - totalCost
 
         // Apply Multiplier and PPF Calculation
-        if (multiplier) {
-            const stockWeight = multiplier
+        const multiplierVal = parseTurkishFloat(multiplier) || 0
+        const ppfRateVal = parseTurkishFloat(ppfRate) || 0
+
+        if (multiplierVal) {
+            const stockWeight = multiplierVal
             const ppfWeight = 1 - stockWeight
-            const ppfProfit = totalCost * (ppfRate || 0) * ppfWeight
+            const ppfProfit = totalCost * ppfRateVal * ppfWeight
 
             // totalProfit currently holds the raw stock profit
             totalProfit = (totalProfit * stockWeight) + ppfProfit

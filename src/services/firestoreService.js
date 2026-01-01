@@ -80,6 +80,22 @@ export async function updateFundPpfRate(fundId, ppfRate) {
     })
 }
 
+// Update fund PPF weight
+export async function updateFundPpfWeight(fundId, ppfWeight) {
+    const fundRef = doc(db, FUNDS_COLLECTION, fundId)
+    await updateDoc(fundRef, {
+        ppfWeight
+    })
+}
+
+// Update fund GYF rate
+export async function updateFundGyfRate(fundId, gyfRate) {
+    const fundRef = doc(db, FUNDS_COLLECTION, fundId)
+    await updateDoc(fundRef, {
+        gyfRate
+    })
+}
+
 // Update fund name
 export async function updateFundName(fundId, name) {
     const fundRef = doc(db, FUNDS_COLLECTION, fundId)

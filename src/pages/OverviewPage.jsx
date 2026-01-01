@@ -80,7 +80,7 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
         console.error(`❌ Error updating ${fund.id}:`, error)
     }
 
-    let { totalReturn, totalValue, totalProfit } = calculateFundReturn(liveHoldings, fund.multiplier, rates, fund.ppfRate)
+    let { totalReturn, totalValue, totalProfit } = calculateFundReturn(liveHoldings, fund.multiplier, rates, fund.ppfRate, fund.ppfWeight, fund.gyfRate)
 
     // Report live return to parent
     useEffect(() => {
@@ -287,7 +287,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
         return 0
     }
 
-    const calculateFundReturn = (portfolio, multiplier = 1, rates = {}, ppfRate = 0) => {
+    const calculateFundReturn = (portfolio, multiplier = 1, rates = {}, ppfRate = 0, ppfWeight = null, gyfRate = 0) => {
         if (!portfolio || portfolio.length === 0) return { totalReturn: 0, totalValue: 0, totalProfit: 0 }
 
         const calculated = portfolio.map(item => {
@@ -315,14 +315,22 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
         // Apply Multiplier and PPF Calculation
         const multiplierVal = parseTurkishFloat(multiplier) || 0
         const ppfRateVal = parseTurkishFloat(ppfRate) || 0
+        const ppfWeightVal = ppfWeight !== null ? parseTurkishFloat(ppfWeight) : (1 - (multiplierVal || 1))
+        const gyfRateVal = parseTurkishFloat(gyfRate) || 0
 
         if (multiplierVal) {
             const stockWeight = multiplierVal
-            const ppfWeight = 1 - stockWeight
-            const ppfProfit = totalCost * ppfRateVal * ppfWeight
+            const explicitPpfWeight = ppfWeightVal
 
-            // totalProfit currently holds the raw stock profit
-            totalProfit = (totalProfit * stockWeight) + ppfProfit
+            // Remaining weight goes to GYF
+            const gyfWeight = Math.max(0, 1 - stockWeight - explicitPpfWeight)
+
+            const stockProfit = totalProfit // Raw stock profit from previous calc
+            const ppfProfit = totalCost * ppfRateVal * explicitPpfWeight
+            const gyfProfit = totalCost * gyfRateVal * gyfWeight
+
+            // Total Profit = (Stock Profit * Stock Weight) + (Cost * PPF Rate * PPF Weight) + (Cost * GYF Rate * GYF Weight)
+            totalProfit = (stockProfit * stockWeight) + ppfProfit + gyfProfit
         }
 
         const totalReturn = totalCost > 0 ? ((totalProfit / totalCost) * 100) : 0
@@ -358,7 +366,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                                         code: f.id,
                                         returnRate: liveReturns[f.id] !== undefined
                                             ? liveReturns[f.id]
-                                            : calculateFundReturn(f.holdings || [], f.multiplier, rates, f.ppfRate).totalReturn
+                                            : calculateFundReturn(f.holdings || [], f.multiplier, rates, f.ppfRate, f.ppfWeight, f.gyfRate).totalReturn
                                     }))}
                                     updateTime={liveUpdateTime}
                                 />

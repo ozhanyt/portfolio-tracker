@@ -11,7 +11,7 @@ import { useStockPriceUpdates } from '@/hooks/useStockPriceUpdates'
 import { getAllLogos } from '@/services/logoService'
 import { marketDebugData } from '@/services/marketDataService'
 
-import { subscribeToFund, updateFundHoldings, updateFundMultiplier, updateFundTotals, updateFundPpfRate } from '../services/firestoreService'
+import { subscribeToFund, updateFundHoldings, updateFundMultiplier, updateFundTotals, updateFundPpfRate, updateFundPpfWeight, updateFundGyfRate } from '../services/firestoreService'
 import { useAdmin } from '@/contexts/AdminContext'
 
 export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
@@ -23,6 +23,8 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const [portfolio, setPortfolio] = useState([])
   const [multiplier, setMultiplier] = useState(1)
   const [ppfRate, setPpfRate] = useState(0)
+  const [ppfWeight, setPpfWeight] = useState(null) // Null = Auto (1 - multiplier)
+  const [gyfRate, setGyfRate] = useState(0)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingStock, setEditingStock] = useState(null)
   const [logoMap, setLogoMap] = useState({})
@@ -114,6 +116,8 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
         setMultiplier(data.multiplier || 1)
         setPpfRate(data.ppfRate || 0)
+        setPpfWeight(data.ppfWeight !== undefined ? data.ppfWeight : null) // Allow null for default
+        setGyfRate(data.gyfRate || 0)
       } else {
         // Fund not found
         navigate('/')
@@ -227,16 +231,25 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     return 0
   }
 
-  const multiplierVal = parseTurkishFloat(multiplier) || 1
+  const multiplierVal = parseTurkishFloat(multiplier) || 0
   const ppfRateVal = parseTurkishFloat(ppfRate) || 0
+  const ppfWeightVal = ppfWeight !== null ? parseTurkishFloat(ppfWeight) : (1 - (multiplierVal || 1))
+  const gyfRateVal = parseTurkishFloat(gyfRate) || 0
 
   if (multiplierVal) {
     const stockWeight = multiplierVal
-    const ppfWeight = 1 - stockWeight
-    const ppfProfit = totalCost * ppfRateVal * ppfWeight
+    const explicitPpfWeight = ppfWeightVal
 
-    // totalProfit currently holds the raw stock profit
-    totalProfit = (totalProfit * stockWeight) + ppfProfit
+    // Remaining weight goes to GYF
+    // Formula: Total - Stock - PPF
+    const gyfWeight = Math.max(0, 1 - stockWeight - explicitPpfWeight)
+
+    const stockProfit = totalProfit // Raw stock profit from previous calc
+    const ppfProfit = totalCost * ppfRateVal * explicitPpfWeight
+    const gyfProfit = totalCost * gyfRateVal * gyfWeight
+
+    // Total Profit = (Stock Profit * Stock Weight) + (Cost * PPF Rate * PPF Weight) + (Cost * GYF Rate * GYF Weight)
+    totalProfit = (stockProfit * stockWeight) + ppfProfit + gyfProfit
   }
 
   const totalReturnPercent = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0
@@ -354,6 +367,8 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
   const [isSavingMultiplier, setIsSavingMultiplier] = useState(false)
   const [isSavingPpfRate, setIsSavingPpfRate] = useState(false)
+  const [isSavingPpfWeight, setIsSavingPpfWeight] = useState(false)
+  const [isSavingGyfRate, setIsSavingGyfRate] = useState(false)
 
   const handleMultiplierChange = async (e) => {
     // If triggered by onBlur, e.target.value is used.
@@ -388,6 +403,40 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
       alert("PPF oranı kaydedilemedi!")
     } finally {
       setIsSavingPpfRate(false)
+    }
+  }
+
+  const handlePpfWeightChange = async (e) => {
+    let valStr = String(ppfWeight).replace(',', '.')
+    const val = parseFloat(valStr)
+
+    if (isNaN(val)) return
+
+    setIsSavingPpfWeight(true)
+    try {
+      await updateFundPpfWeight(fundCode, val)
+    } catch (error) {
+      console.error("Error saving PPF Weight:", error)
+      alert("PPF Ağırlığı kaydedilemedi!")
+    } finally {
+      setIsSavingPpfWeight(false)
+    }
+  }
+
+  const handleGyfRateChange = async (e) => {
+    let valStr = String(gyfRate).replace(',', '.')
+    const val = parseFloat(valStr)
+
+    if (isNaN(val)) return
+
+    setIsSavingGyfRate(true)
+    try {
+      await updateFundGyfRate(fundCode, val)
+    } catch (error) {
+      console.error("Error saving GYF Rate:", error)
+      alert("GYF Oranı kaydedilemedi!")
+    } finally {
+      setIsSavingGyfRate(false)
     }
   }
 
@@ -613,6 +662,55 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                     </div>
                     <p className="text-[10px] text-muted-foreground mt-2">
                       Toplam Kar = (Hisse Karı * Ağırlık) + (Toplam Maliyet * PPF Oranı * (1 - Ağırlık))
+                    </p>
+                  </div>
+
+                  {/* PPF Weight Input */}
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">PPF Ağırlığı (Opsiyonel)</label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="number"
+                        step="0.0001"
+                        value={ppfWeight !== null ? ppfWeight : (1 - multiplierVal).toFixed(4)}
+                        onChange={(e) => setPpfWeight(e.target.value)}
+                        onBlur={handlePpfWeightChange}
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="Örn: 0.20"
+                      />
+                      <span className="text-xs text-muted-foreground whitespace-nowrap w-24">
+                        {isSavingPpfWeight ? (
+                          <span className="text-blue-500 animate-pulse">Kaydediliyor...</span>
+                        ) : (
+                          <span>Mevcut: {ppfWeight !== null ? ppfWeight : 'Oto'}</span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* GYF Rate Input */}
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">GYF Oranı (Getiri)</label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="number"
+                        step="0.0001"
+                        value={gyfRate}
+                        onChange={(e) => setGyfRate(e.target.value)}
+                        onBlur={handleGyfRateChange}
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="Örn: 0.10"
+                      />
+                      <span className="text-xs text-muted-foreground whitespace-nowrap w-24">
+                        {isSavingGyfRate ? (
+                          <span className="text-blue-500 animate-pulse">Kaydediliyor...</span>
+                        ) : (
+                          <span>Mevcut: {gyfRate}</span>
+                        )}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-2">
+                      GYF Ağırlığı = 1 - Hisse Ağırlığı - PPF Ağırlığı
                     </p>
                   </div>
                 </CardContent>

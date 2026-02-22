@@ -236,10 +236,10 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     return 0
   }
 
-  // Get live BIST100/XU030 market data to calculate dynamic VIOP rate if needed
-  // Since we rely on BIST100 from API (Proxy for XU030 in this context or general market)
-  const indexReturn = ((marketDebugData.itemCount > 0 ? localStorage.getItem('market_data_cache') : null) || '')?.includes('BIST100') ?
-    (JSON.parse(localStorage.getItem('market_data_cache'))?.data?.find(m => m.symbol === 'BIST100')?.changePercent || 0) / 100 : 0
+  // Get live BIST30/XU030 market data to calculate dynamic VIOP rate if needed
+  // We use BIST30 for VIOP Hedge
+  const indexReturn = ((marketDebugData.itemCount > 0 ? localStorage.getItem('market_data_cache') : null) || '')?.includes('BIST30') ?
+    (JSON.parse(localStorage.getItem('market_data_cache'))?.data?.find(m => m.symbol === 'BIST30')?.changePercent || 0) / 100 : 0
 
   const multiplierVal = parseTurkishFloat(multiplier) || 0
   const ppfRateVal = parseTurkishFloat(ppfRate) || 0

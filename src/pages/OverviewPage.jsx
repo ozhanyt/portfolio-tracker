@@ -80,7 +80,7 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
         console.error(`❌ Error updating ${fund.id}:`, error)
     }
 
-    let { totalReturn, totalValue, totalProfit } = calculateFundReturn(liveHoldings, fund.multiplier, rates, fund.ppfRate, fund.ppfWeight, fund.gyfRate)
+    let { totalReturn, totalValue, totalProfit } = calculateFundReturn(liveHoldings, fund.multiplier, rates, fund.ppfRate, fund.ppfWeight, fund.gyfRate, fund.viopRate, fund.viopWeight, fund.viopLeverage)
 
     // Report live return to parent
     useEffect(() => {
@@ -287,7 +287,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
         return 0
     }
 
-    const calculateFundReturn = (portfolio, multiplier = 1, rates = {}, ppfRate = 0, ppfWeight = null, gyfRate = 0) => {
+    const calculateFundReturn = (portfolio, multiplier = 1, rates = {}, ppfRate = 0, ppfWeight = null, gyfRate = 0, viopRate = 0, viopWeight = 0, viopLeverage = 1) => {
         if (!portfolio || portfolio.length === 0) return { totalReturn: 0, totalValue: 0, totalProfit: 0 }
 
         const calculated = portfolio.map(item => {
@@ -312,25 +312,36 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
         const totalCost = calculated.reduce((sum, item) => sum + item.totalCost, 0)
         let totalProfit = totalValue - totalCost
 
-        // Apply Multiplier and PPF Calculation
+        // Get live BIST30/XU030 market data to calculate dynamic VIOP rate if needed
+        const indexReturn = ((marketDebugData.itemCount > 0 ? localStorage.getItem('market_data_cache') : null) || '')?.includes('BIST30') ?
+            (JSON.parse(localStorage.getItem('market_data_cache'))?.data?.find(m => m.symbol === 'BIST30')?.changePercent || 0) / 100 : 0
+
+        // Apply Multiplier, PPF, and VIOP Calculation
         const multiplierVal = parseTurkishFloat(multiplier) || 0
         const ppfRateVal = parseTurkishFloat(ppfRate) || 0
         const ppfWeightVal = ppfWeight !== null ? parseTurkishFloat(ppfWeight) : (1 - (multiplierVal || 1))
         const gyfRateVal = parseTurkishFloat(gyfRate) || 0
+        const viopWeightVal = parseTurkishFloat(viopWeight) || 0
+        const viopLeverageVal = parseTurkishFloat(viopLeverage) || 1
+
+        const manualViopRate = parseTurkishFloat(viopRate) || 0;
+        const viopRateVal = manualViopRate !== 0 ? manualViopRate : -(indexReturn * viopLeverageVal)
 
         if (multiplierVal) {
             const stockWeight = multiplierVal
             const explicitPpfWeight = ppfWeightVal
+            const explicitViopWeight = viopWeightVal
 
             // Remaining weight goes to GYF
-            const gyfWeight = Math.max(0, 1 - stockWeight - explicitPpfWeight)
+            const gyfWeight = Math.max(0, 1 - stockWeight - explicitPpfWeight - explicitViopWeight)
 
             const stockProfit = totalProfit // Raw stock profit from previous calc
             const ppfProfit = totalCost * ppfRateVal * explicitPpfWeight
             const gyfProfit = totalCost * gyfRateVal * gyfWeight
+            const viopProfit = totalCost * viopRateVal * explicitViopWeight
 
-            // Total Profit = (Stock Profit * Stock Weight) + (Cost * PPF Rate * PPF Weight) + (Cost * GYF Rate * GYF Weight)
-            totalProfit = (stockProfit * stockWeight) + ppfProfit + gyfProfit
+            // Total Profit 
+            totalProfit = (stockProfit * stockWeight) + ppfProfit + gyfProfit + viopProfit
         }
 
         const totalReturn = totalCost > 0 ? ((totalProfit / totalCost) * 100) : 0
@@ -366,7 +377,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                                         code: f.id,
                                         returnRate: liveReturns[f.id] !== undefined
                                             ? liveReturns[f.id]
-                                            : calculateFundReturn(f.holdings || [], f.multiplier, rates, f.ppfRate, f.ppfWeight, f.gyfRate).totalReturn
+                                            : calculateFundReturn(f.holdings || [], f.multiplier, rates, f.ppfRate, f.ppfWeight, f.gyfRate, f.viopRate, f.viopWeight, f.viopLeverage).totalReturn
                                     }))}
                                     updateTime={liveUpdateTime}
                                 />

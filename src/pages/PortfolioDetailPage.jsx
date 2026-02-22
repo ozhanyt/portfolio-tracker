@@ -392,12 +392,10 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const [isSavingViopLeverage, setIsSavingViopLeverage] = useState(false)
 
   const handleMultiplierChange = async (e) => {
-    // If triggered by onBlur, e.target.value is used.
-    // If triggered by Enter key (optional), same.
     let valStr = String(multiplier).replace(',', '.')
-    const val = parseFloat(valStr)
+    let val = parseFloat(valStr)
 
-    if (isNaN(val)) return
+    if (isNaN(val)) val = 0
 
     setIsSavingMultiplier(true)
     try {
@@ -412,9 +410,9 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
   const handlePpfRateChange = async (e) => {
     let valStr = String(ppfRate).replace(',', '.')
-    const val = parseFloat(valStr)
+    let val = parseFloat(valStr)
 
-    if (isNaN(val)) return
+    if (isNaN(val)) val = 0
 
     setIsSavingPpfRate(true)
     try {
@@ -429,9 +427,9 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
   const handlePpfWeightChange = async (e) => {
     let valStr = String(ppfWeight).replace(',', '.')
-    const val = parseFloat(valStr)
+    let val = parseFloat(valStr)
 
-    if (isNaN(val)) return
+    if (isNaN(val)) val = null // For PPF weight, empty means Auto (null)
 
     setIsSavingPpfWeight(true)
     try {
@@ -446,9 +444,9 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
   const handleGyfRateChange = async (e) => {
     let valStr = String(gyfRate).replace(',', '.')
-    const val = parseFloat(valStr)
+    let val = parseFloat(valStr)
 
-    if (isNaN(val)) return
+    if (isNaN(val)) val = 0
 
     setIsSavingGyfRate(true)
     try {
@@ -463,9 +461,9 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
   const handleViopRateChange = async (e) => {
     let valStr = String(viopRate).replace(',', '.')
-    const val = parseFloat(valStr)
+    let val = parseFloat(valStr)
 
-    if (isNaN(val)) return
+    if (isNaN(val)) val = 0
 
     setIsSavingViopRate(true)
     try {
@@ -480,9 +478,9 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
   const handleViopWeightChange = async (e) => {
     let valStr = String(viopWeight).replace(',', '.')
-    const val = parseFloat(valStr)
+    let val = parseFloat(valStr)
 
-    if (isNaN(val)) return
+    if (isNaN(val)) val = 0
 
     setIsSavingViopWeight(true)
     try {
@@ -497,9 +495,9 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
   const handleViopLeverageChange = async (e) => {
     let valStr = String(viopLeverage).replace(',', '.')
-    const val = parseFloat(valStr)
+    let val = parseFloat(valStr)
 
-    if (isNaN(val)) return
+    if (isNaN(val)) val = 1 // Default leverage is 1
 
     setIsSavingViopLeverage(true)
     try {

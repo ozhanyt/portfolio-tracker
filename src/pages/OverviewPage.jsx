@@ -417,9 +417,14 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                             Yükleniyor...
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                             {marketData
-                                .filter(m => ['USDTRY', 'BIST100', 'BIST30', 'BTCUSD', 'GOLD_TL', 'SILVER_TL'].includes(m.symbol))
+                                .filter(m => ['USDTRY', 'BIST100', 'BTCUSD', 'GOLD_TL', 'SILVER_TL', 'BIST30'].includes(m.symbol))
+                                .sort((a, b) => {
+                                    // Custom sort order to ensure they appear in a specific sequence if needed
+                                    const order = ['USDTRY', 'BIST100', 'BIST30', 'BTCUSD', 'GOLD_TL', 'SILVER_TL'];
+                                    return order.indexOf(a.symbol) - order.indexOf(b.symbol);
+                                })
                                 .map((market) => (
                                     <div
                                         key={market.symbol}

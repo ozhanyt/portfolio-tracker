@@ -9,6 +9,7 @@ import { useAdmin } from '@/contexts/AdminContext'
 import { AddFundDialog } from '@/components/AddFundDialog'
 import { ShareOnTwitterButton } from '@/components/ShareOnTwitterButton'
 import { useStockPriceUpdates } from '@/hooks/useStockPriceUpdates'
+import { marketDebugData } from '@/services/marketDataService'
 
 import {
     DndContext,

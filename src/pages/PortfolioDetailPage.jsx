@@ -11,7 +11,7 @@ import { useStockPriceUpdates } from '@/hooks/useStockPriceUpdates'
 import { getAllLogos } from '@/services/logoService'
 import { marketDebugData } from '@/services/marketDataService'
 
-import { subscribeToFund, updateFundHoldings, updateFundMultiplier, updateFundTotals, updateFundPpfRate, updateFundPpfWeight, updateFundGyfRate, updateFundViopRate, updateFundViopWeight } from '../services/firestoreService'
+import { subscribeToFund, updateFundHoldings, updateFundMultiplier, updateFundTotals, updateFundPpfRate, updateFundPpfWeight, updateFundGyfRate, updateFundViopRate, updateFundViopWeight, updateFundViopLeverage } from '../services/firestoreService'
 import { useAdmin } from '@/contexts/AdminContext'
 
 export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
@@ -27,6 +27,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const [gyfRate, setGyfRate] = useState(0)
   const [viopRate, setViopRate] = useState(0)
   const [viopWeight, setViopWeight] = useState(0)
+  const [viopLeverage, setViopLeverage] = useState(1)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingStock, setEditingStock] = useState(null)
   const [logoMap, setLogoMap] = useState({})
@@ -122,6 +123,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
         setGyfRate(data.gyfRate || 0)
         setViopRate(data.viopRate || 0)
         setViopWeight(data.viopWeight || 0)
+        setViopLeverage(data.viopLeverage || 1)
       } else {
         // Fund not found
         navigate('/')
@@ -226,7 +228,6 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   // Apply Multiplier and PPF Calculation
   // Total Profit = (Stock Profit * Multiplier) + (Total Cost * PPF Rate * (1 - Multiplier))
 
-  // Ensure multiplier is a number (Handle Turkish comma)
   const parseTurkishFloat = (val) => {
     if (typeof val === 'number') return val
     if (typeof val === 'string') {
@@ -235,12 +236,21 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     return 0
   }
 
+  // Get live BIST100/XU030 market data to calculate dynamic VIOP rate if needed
+  // Since we rely on BIST100 from API (Proxy for XU030 in this context or general market)
+  const indexReturn = ((marketDebugData.itemCount > 0 ? localStorage.getItem('market_data_cache') : null) || '')?.includes('BIST100') ?
+    (JSON.parse(localStorage.getItem('market_data_cache'))?.data?.find(m => m.symbol === 'BIST100')?.changePercent || 0) / 100 : 0
+
   const multiplierVal = parseTurkishFloat(multiplier) || 0
   const ppfRateVal = parseTurkishFloat(ppfRate) || 0
   const ppfWeightVal = ppfWeight !== null ? parseTurkishFloat(ppfWeight) : (1 - (multiplierVal || 1))
   const gyfRateVal = parseTurkishFloat(gyfRate) || 0
-  const viopRateVal = parseTurkishFloat(viopRate) || 0
   const viopWeightVal = parseTurkishFloat(viopWeight) || 0
+  const viopLeverageVal = parseTurkishFloat(viopLeverage) || 1
+
+  // Dynamic VIOP Rate vs Manual VIOP Rate: If manual is 0, attempt auto index return
+  const manualViopRate = parseTurkishFloat(viopRate) || 0;
+  const viopRateVal = manualViopRate !== 0 ? manualViopRate : -(indexReturn * viopLeverageVal) // Short position logic
 
   if (multiplierVal) {
     const stockWeight = multiplierVal
@@ -379,6 +389,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const [isSavingGyfRate, setIsSavingGyfRate] = useState(false)
   const [isSavingViopRate, setIsSavingViopRate] = useState(false)
   const [isSavingViopWeight, setIsSavingViopWeight] = useState(false)
+  const [isSavingViopLeverage, setIsSavingViopLeverage] = useState(false)
 
   const handleMultiplierChange = async (e) => {
     // If triggered by onBlur, e.target.value is used.
@@ -481,6 +492,23 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
       alert("VIOP Ağırlığı kaydedilemedi!")
     } finally {
       setIsSavingViopWeight(false)
+    }
+  }
+
+  const handleViopLeverageChange = async (e) => {
+    let valStr = String(viopLeverage).replace(',', '.')
+    const val = parseFloat(valStr)
+
+    if (isNaN(val)) return
+
+    setIsSavingViopLeverage(true)
+    try {
+      await updateFundViopLeverage(fundCode, val)
+    } catch (error) {
+      console.error("Error saving VIOP Leverage:", error)
+      alert("VIOP Kaldıracı kaydedilemedi!")
+    } finally {
+      setIsSavingViopLeverage(false)
     }
   }
 
@@ -760,7 +788,12 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
                   {/* VIOP Rate Input */}
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-1 block">VIOP Oranı (Getiri)</label>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-xs font-medium text-muted-foreground block">VIOP Oranı (Getiri)</label>
+                      <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
+                        Oto: {(-indexReturn * viopLeverageVal * 100).toFixed(2)}%
+                      </span>
+                    </div>
                     <div className="flex items-center gap-4">
                       <input
                         type="number"
@@ -769,13 +802,13 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                         onChange={(e) => setViopRate(e.target.value)}
                         onBlur={handleViopRateChange}
                         className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        placeholder="Örn: 0.10"
+                        placeholder="0 bırakırsanız otomatik hesaplanır"
                       />
                       <span className="text-xs text-muted-foreground whitespace-nowrap w-24">
                         {isSavingViopRate ? (
                           <span className="text-blue-500 animate-pulse">Kaydediliyor...</span>
                         ) : (
-                          <span>Mevcut: {viopRate}</span>
+                          <span>Mevcut: {viopRate == 0 ? 'Oto' : viopRate}</span>
                         )}
                       </span>
                     </div>
@@ -802,6 +835,32 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                         )}
                       </span>
                     </div>
+                  </div>
+
+                  {/* VIOP Leverage Input */}
+                  <div className="pb-4">
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">VIOP Kaldıracı</label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={viopLeverage}
+                        onChange={(e) => setViopLeverage(e.target.value)}
+                        onBlur={handleViopLeverageChange}
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="Örn: 1.0 (Birebir)"
+                      />
+                      <span className="text-xs text-muted-foreground whitespace-nowrap w-24">
+                        {isSavingViopLeverage ? (
+                          <span className="text-blue-500 animate-pulse">Kaydediliyor...</span>
+                        ) : (
+                          <span>Mevcut: {viopLeverage}x</span>
+                        )}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-2">
+                      Getiri Formülü: -(Endeks Değişimi x Kaldıraç). Manuel değer (0'dan farklı) girildiğinde otomatik formül iptal olur.
+                    </p>
                   </div>
                 </CardContent>
               </Card>

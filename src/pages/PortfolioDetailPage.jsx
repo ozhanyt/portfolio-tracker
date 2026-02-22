@@ -11,7 +11,7 @@ import { useStockPriceUpdates } from '@/hooks/useStockPriceUpdates'
 import { getAllLogos } from '@/services/logoService'
 import { marketDebugData } from '@/services/marketDataService'
 
-import { subscribeToFund, updateFundHoldings, updateFundMultiplier, updateFundTotals, updateFundPpfRate, updateFundPpfWeight, updateFundGyfRate } from '../services/firestoreService'
+import { subscribeToFund, updateFundHoldings, updateFundMultiplier, updateFundTotals, updateFundPpfRate, updateFundPpfWeight, updateFundGyfRate, updateFundViopRate, updateFundViopWeight } from '../services/firestoreService'
 import { useAdmin } from '@/contexts/AdminContext'
 
 export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
@@ -25,6 +25,8 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const [ppfRate, setPpfRate] = useState(0)
   const [ppfWeight, setPpfWeight] = useState(null) // Null = Auto (1 - multiplier)
   const [gyfRate, setGyfRate] = useState(0)
+  const [viopRate, setViopRate] = useState(0)
+  const [viopWeight, setViopWeight] = useState(0)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingStock, setEditingStock] = useState(null)
   const [logoMap, setLogoMap] = useState({})
@@ -118,6 +120,8 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
         setPpfRate(data.ppfRate || 0)
         setPpfWeight(data.ppfWeight !== undefined ? data.ppfWeight : null) // Allow null for default
         setGyfRate(data.gyfRate || 0)
+        setViopRate(data.viopRate || 0)
+        setViopWeight(data.viopWeight || 0)
       } else {
         // Fund not found
         navigate('/')
@@ -235,21 +239,25 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const ppfRateVal = parseTurkishFloat(ppfRate) || 0
   const ppfWeightVal = ppfWeight !== null ? parseTurkishFloat(ppfWeight) : (1 - (multiplierVal || 1))
   const gyfRateVal = parseTurkishFloat(gyfRate) || 0
+  const viopRateVal = parseTurkishFloat(viopRate) || 0
+  const viopWeightVal = parseTurkishFloat(viopWeight) || 0
 
   if (multiplierVal) {
     const stockWeight = multiplierVal
     const explicitPpfWeight = ppfWeightVal
+    const explicitViopWeight = viopWeightVal
 
     // Remaining weight goes to GYF
-    // Formula: Total - Stock - PPF
-    const gyfWeight = Math.max(0, 1 - stockWeight - explicitPpfWeight)
+    // Formula: Total - Stock - PPF - VIOP
+    const gyfWeight = Math.max(0, 1 - stockWeight - explicitPpfWeight - explicitViopWeight)
 
     const stockProfit = totalProfit // Raw stock profit from previous calc
     const ppfProfit = totalCost * ppfRateVal * explicitPpfWeight
     const gyfProfit = totalCost * gyfRateVal * gyfWeight
+    const viopProfit = totalCost * viopRateVal * explicitViopWeight
 
-    // Total Profit = (Stock Profit * Stock Weight) + (Cost * PPF Rate * PPF Weight) + (Cost * GYF Rate * GYF Weight)
-    totalProfit = (stockProfit * stockWeight) + ppfProfit + gyfProfit
+    // Total Profit = (Stock Profit * Stock Weight) + (Cost * PPF Rate * PPF Weight) + (Cost * GYF Rate * GYF Weight) + (Cost * VIOP Rate * VIOP Weight)
+    totalProfit = (stockProfit * stockWeight) + ppfProfit + gyfProfit + viopProfit
   }
 
   const totalReturnPercent = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0
@@ -369,6 +377,8 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const [isSavingPpfRate, setIsSavingPpfRate] = useState(false)
   const [isSavingPpfWeight, setIsSavingPpfWeight] = useState(false)
   const [isSavingGyfRate, setIsSavingGyfRate] = useState(false)
+  const [isSavingViopRate, setIsSavingViopRate] = useState(false)
+  const [isSavingViopWeight, setIsSavingViopWeight] = useState(false)
 
   const handleMultiplierChange = async (e) => {
     // If triggered by onBlur, e.target.value is used.
@@ -437,6 +447,40 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
       alert("GYF Oranı kaydedilemedi!")
     } finally {
       setIsSavingGyfRate(false)
+    }
+  }
+
+  const handleViopRateChange = async (e) => {
+    let valStr = String(viopRate).replace(',', '.')
+    const val = parseFloat(valStr)
+
+    if (isNaN(val)) return
+
+    setIsSavingViopRate(true)
+    try {
+      await updateFundViopRate(fundCode, val)
+    } catch (error) {
+      console.error("Error saving VIOP Rate:", error)
+      alert("VIOP Oranı kaydedilemedi!")
+    } finally {
+      setIsSavingViopRate(false)
+    }
+  }
+
+  const handleViopWeightChange = async (e) => {
+    let valStr = String(viopWeight).replace(',', '.')
+    const val = parseFloat(valStr)
+
+    if (isNaN(val)) return
+
+    setIsSavingViopWeight(true)
+    try {
+      await updateFundViopWeight(fundCode, val)
+    } catch (error) {
+      console.error("Error saving VIOP Weight:", error)
+      alert("VIOP Ağırlığı kaydedilemedi!")
+    } finally {
+      setIsSavingViopWeight(false)
     }
   }
 
@@ -710,8 +754,54 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                       </span>
                     </div>
                     <p className="text-[10px] text-muted-foreground mt-2">
-                      GYF Ağırlığı = 1 - Hisse Ağırlığı - PPF Ağırlığı
+                      GYF Ağırlığı = 1 - Hisse Ağırlığı - PPF Ağırlığı - VIOP Ağırlığı
                     </p>
+                  </div>
+
+                  {/* VIOP Rate Input */}
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">VIOP Oranı (Getiri)</label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="number"
+                        step="0.0001"
+                        value={viopRate}
+                        onChange={(e) => setViopRate(e.target.value)}
+                        onBlur={handleViopRateChange}
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="Örn: 0.10"
+                      />
+                      <span className="text-xs text-muted-foreground whitespace-nowrap w-24">
+                        {isSavingViopRate ? (
+                          <span className="text-blue-500 animate-pulse">Kaydediliyor...</span>
+                        ) : (
+                          <span>Mevcut: {viopRate}</span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* VIOP Weight Input */}
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">VIOP Ağırlığı</label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="number"
+                        step="0.0001"
+                        value={viopWeight}
+                        onChange={(e) => setViopWeight(e.target.value)}
+                        onBlur={handleViopWeightChange}
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="Örn: 0.10"
+                      />
+                      <span className="text-xs text-muted-foreground whitespace-nowrap w-24">
+                        {isSavingViopWeight ? (
+                          <span className="text-blue-500 animate-pulse">Kaydediliyor...</span>
+                        ) : (
+                          <span>Mevcut: {viopWeight}</span>
+                        )}
+                      </span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

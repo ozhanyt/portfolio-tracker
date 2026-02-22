@@ -96,6 +96,22 @@ export async function updateFundGyfRate(fundId, gyfRate) {
     })
 }
 
+// Update fund VIOP rate
+export async function updateFundViopRate(fundId, viopRate) {
+    const fundRef = doc(db, FUNDS_COLLECTION, fundId)
+    await updateDoc(fundRef, {
+        viopRate
+    })
+}
+
+// Update fund VIOP weight
+export async function updateFundViopWeight(fundId, viopWeight) {
+    const fundRef = doc(db, FUNDS_COLLECTION, fundId)
+    await updateDoc(fundRef, {
+        viopWeight
+    })
+}
+
 // Update fund name
 export async function updateFundName(fundId, name) {
     const fundRef = doc(db, FUNDS_COLLECTION, fundId)

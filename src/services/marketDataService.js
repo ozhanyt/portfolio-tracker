@@ -46,8 +46,19 @@ export async function fetchMarketData() {
         marketDebugData.itemCount = Array.isArray(data) ? data.length : 0;
         console.log('📡 Market Data Fetched:', data);
 
-        // Veriyi formatla (Sheet'ten gelen format: { symbol, price, changePercent })
-        // UI'ın beklediği format: { symbol, price, changePercent } (Aynı)
+        // Normalize changePercent: API returns some values as decimals (0.034 = 3.4%)
+        // and others (BIST30) already as percentages (-2.78 = -2.78%)
+        // Convert all to percentage format for consistent UI display
+        if (Array.isArray(data)) {
+            data.forEach(item => {
+                if (item.changePercent !== undefined && item.changePercent !== null) {
+                    // If absolute value < 1, it's likely a decimal that needs *100
+                    if (Math.abs(item.changePercent) < 1) {
+                        item.changePercent = item.changePercent * 100;
+                    }
+                }
+            });
+        }
 
         // Cache'le (SADECE veri varsa)
         if (Array.isArray(data) && data.length > 0) {

@@ -9,7 +9,7 @@ import { useAdmin } from '@/contexts/AdminContext'
 import { AddFundDialog } from '@/components/AddFundDialog'
 import { ShareOnTwitterButton } from '@/components/ShareOnTwitterButton'
 import { useStockPriceUpdates } from '@/hooks/useStockPriceUpdates'
-import { marketDebugData } from '@/services/marketDataService'
+import { marketDebugData, getBist30Return } from '@/services/marketDataService'
 
 import {
     DndContext,
@@ -314,8 +314,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
         let totalProfit = totalValue - totalCost
 
         // Get live BIST30/XU030 market data to calculate dynamic VIOP rate if needed
-        const indexReturn = ((marketDebugData.itemCount > 0 ? localStorage.getItem('market_data_cache') : null) || '')?.includes('BIST30') ?
-            (JSON.parse(localStorage.getItem('market_data_cache'))?.data?.find(m => m.symbol === 'BIST30')?.changePercent || 0) / 100 : 0
+        const indexReturn = getBist30Return()
 
         // Apply Multiplier, PPF, and VIOP Calculation
         const multiplierVal = parseTurkishFloat(multiplier) || 0

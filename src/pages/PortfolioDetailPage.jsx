@@ -9,7 +9,7 @@ import { PortfolioAllocationChart } from '@/components/PortfolioAllocationChart'
 import { formatCurrency, formatPercent, formatNumber, cn } from '@/lib/utils'
 import { useStockPriceUpdates } from '@/hooks/useStockPriceUpdates'
 import { getAllLogos } from '@/services/logoService'
-import { marketDebugData } from '@/services/marketDataService'
+import { marketDebugData, getBist30Return } from '@/services/marketDataService'
 
 import { subscribeToFund, updateFundHoldings, updateFundMultiplier, updateFundTotals, updateFundPpfRate, updateFundPpfWeight, updateFundGyfRate, updateFundViopRate, updateFundViopWeight, updateFundViopLeverage } from '../services/firestoreService'
 import { useAdmin } from '@/contexts/AdminContext'
@@ -238,8 +238,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
   // Get live BIST30/XU030 market data to calculate dynamic VIOP rate if needed
   // We use BIST30 for VIOP Hedge
-  const indexReturn = ((marketDebugData.itemCount > 0 ? localStorage.getItem('market_data_cache') : null) || '')?.includes('BIST30') ?
-    (JSON.parse(localStorage.getItem('market_data_cache'))?.data?.find(m => m.symbol === 'BIST30')?.changePercent || 0) / 100 : 0
+  const indexReturn = getBist30Return()
 
   const multiplierVal = parseTurkishFloat(multiplier) || 0
   const ppfRateVal = parseTurkishFloat(ppfRate) || 0

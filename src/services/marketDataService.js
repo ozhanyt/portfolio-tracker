@@ -8,6 +8,22 @@
 const CACHE_KEY = 'market_data_cache_v2'
 const OLD_CACHE_KEY = 'market_data_cache'
 const CACHE_DURATION = 15 * 60 * 1000 // 15 minutes
+
+/**
+ * Get BIST30 index return as a decimal (e.g., -0.033 for -3.3%)
+ * Used by VIOP auto-calculation in fund return logic
+ */
+export function getBist30Return() {
+    try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (!cached) return 0;
+        const { data } = JSON.parse(cached);
+        const bist30 = Array.isArray(data) ? data.find(m => m.symbol === 'BIST30') : null;
+        return bist30?.changePercent ? bist30.changePercent / 100 : 0;
+    } catch {
+        return 0;
+    }
+}
 export const marketDebugData = {
     lastUrl: '',
     lastStatus: 'Init',

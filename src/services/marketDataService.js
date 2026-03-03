@@ -5,8 +5,8 @@
 
 // Persistent cache for market data
 // Cache key includes version to invalidate old unnormalized data
-const CACHE_KEY = 'market_data_cache_v2'
-const OLD_CACHE_KEY = 'market_data_cache'
+const CACHE_KEY = 'market_data_cache_v3'
+const OLD_CACHE_KEY = 'market_data_cache_v2'
 const CACHE_DURATION = 15 * 60 * 1000 // 15 minutes
 
 /**
@@ -43,8 +43,9 @@ function normalizeMarketData(data) {
     if (!Array.isArray(data)) return data;
     return data.map(item => {
         if (item.changePercent !== undefined && item.changePercent !== null) {
-            // If absolute value < 1, it's a raw decimal that needs *100
-            if (Math.abs(item.changePercent) < 1) {
+            // Explicitly handle BIST30 vs others since Math.abs(x) < 1 is flawed 
+            // when true percentages are between -1% and +1%
+            if (item.symbol !== 'BIST30') {
                 return { ...item, changePercent: item.changePercent * 100 };
             }
         }

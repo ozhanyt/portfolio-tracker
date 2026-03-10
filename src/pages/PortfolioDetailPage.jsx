@@ -763,7 +763,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                       </span>
                     </div>
                     <p className="text-[10px] text-muted-foreground mt-2">
-                      Toplam Kar = (Hisse Karı * Ağırlık) + (Toplam Maliyet * PPF Oranı * (1 - Ağırlık))
+                      Toplam Kar = (Hisse Karları) + (Toplam Fon Büyüklüğü * PPF Oranı * PPF Ağırlığı)
                     </p>
                   </div>
 
@@ -913,7 +913,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                       </span>
                     </div>
                     <p className="text-[10px] text-muted-foreground mt-2">
-                      Getiri Formülü: -(Endeks Değişimi x Kaldıraç). Manuel değer (0'dan farklı) girildiğinde otomatik formül iptal olur.
+                      VIOP Karı = Toplam Fon Büyüklüğü * VIOP Oranı * VIOP Ağırlığı
                     </p>
                   </div>
                 </CardContent>

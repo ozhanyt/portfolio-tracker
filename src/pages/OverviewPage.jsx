@@ -343,11 +343,11 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
             const madens = calculated.filter(item => item.isPreciousMetal)
 
             const stockCost = stocks.reduce((sum, item) => sum + item.totalCost, 0)
-            const stockProfitTL = stocks.reduce((sum, item) => sum + item.profit, 0)
+            const stockProfitTL = stocks.reduce((sum, item) => sum + item.profitTL, 0)
             const stockReturn = stockCost > 0 ? stockProfitTL / stockCost : 0
 
             const madenCost = madens.reduce((sum, item) => sum + item.totalCost, 0)
-            const madenProfitTL = madens.reduce((sum, item) => sum + item.profit, 0)
+            const madenProfitTL = madens.reduce((sum, item) => sum + item.profitTL, 0)
 
             // Base used for other components should be the TOTAL fund cost (Stock volume / multiplier)
             // If multiplier is 0.3, and stock cost is 1.9B, fund cost is 6.3B

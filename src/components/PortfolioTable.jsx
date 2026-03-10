@@ -9,11 +9,11 @@ import {
 } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency, formatNumber, formatFundPrice, formatPercent, cn, isFund } from "@/lib/utils"
-import { ArrowUpIcon, ArrowDownIcon, MinusIcon, Trash2, Pencil, PieChart } from "lucide-react"
+import { ArrowUpIcon, ArrowDownIcon, MinusIcon, Trash2, Pencil, PieChart, Gem } from "lucide-react"
 import { PortfolioPieChartDialog } from './PortfolioPieChartDialog'
 import StockLogo from './StockLogo'
 
-export function PortfolioTable({ data, onDelete, onEdit, onUpdateLogo, fundCode }) {
+export function PortfolioTable({ data, onDelete, onEdit, onUpdateLogo, onToggleMaden, fundCode }) {
     const [isPieChartOpen, setIsPieChartOpen] = useState(false)
 
     return (
@@ -69,7 +69,19 @@ export function PortfolioTable({ data, onDelete, onEdit, onUpdateLogo, fundCode 
                                                 >
                                                     <StockLogo symbol={item.code} logoUrl={item.logoUrl} />
                                                 </div>
-                                                {item.code}
+                                                <span className="font-bold">{item.code}</span>
+                                                {onToggleMaden && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            onToggleMaden(item.code, !item.isPreciousMetal)
+                                                        }}
+                                                        className={cn("ml-1 p-1 rounded-full transition-colors", item.isPreciousMetal ? "text-purple-600 bg-purple-100 dark:bg-purple-900/30" : "text-gray-300 hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10")}
+                                                        title={item.isPreciousMetal ? "Maden Fonu (Tıklayarak Kaldır)" : "Maden Fonu İşaretle"}
+                                                    >
+                                                        <Gem className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                             </td>
                                             <td className="p-4 text-center">
                                                 <div className="flex items-center justify-center gap-2">

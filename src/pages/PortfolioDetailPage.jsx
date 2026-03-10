@@ -388,6 +388,14 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     // Local state will update via subscription
   }
 
+  const handleToggleMaden = async (code, isPreciousMetal) => {
+    // Optimistic update
+    const newPortfolio = portfolio.map(p => p.code === code ? { ...p, isPreciousMetal } : p)
+    setPortfolio(newPortfolio)
+    // Save to Firestore
+    await updateFundHoldings(fundCode, newPortfolio)
+  }
+
   const handleEditStock = (stock) => {
     setEditingStock(stock)
     setIsAddModalOpen(true)
@@ -1043,6 +1051,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
           onDelete={isAdmin ? handleRemoveStock : undefined}
           onEdit={isAdmin ? handleEditStock : undefined}
           onUpdateLogo={isAdmin ? handleUpdateLogo : undefined}
+          onToggleMaden={isAdmin ? handleToggleMaden : undefined}
           fundCode={fundCode}
         />
 

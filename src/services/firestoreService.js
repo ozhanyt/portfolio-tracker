@@ -128,7 +128,6 @@ export async function updateFundMadenWeight(fundId, madenWeight) {
     })
 }
 
-
 // Update fund name
 export async function updateFundName(fundId, name) {
     const fundRef = doc(db, FUNDS_COLLECTION, fundId)

@@ -254,40 +254,31 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const manualViopRate = parseTurkishFloat(viopRate) || 0;
   const viopRateVal = manualViopRate !== 0 ? manualViopRate : -(indexReturn * viopLeverageVal) // Short position logic
 
-  if (multiplierVal) {
-    const stockWeight = multiplierVal
-    const explicitPpfWeight = ppfWeightVal
-    const explicitViopWeight = viopWeightVal
-    const explicitMadenWeight = madenWeightVal
+  // Formula components
+  const stockVolume = calculatedPortfolio.filter(item => !item.isPreciousMetal).reduce((sum, item) => sum + item.totalCost, 0)
+  const stocksProfitTL = calculatedPortfolio.filter(item => !item.isPreciousMetal).reduce((sum, item) => sum + item.profitTL, 0)
+  const madensProfitTL = calculatedPortfolio.filter(item => item.isPreciousMetal).reduce((sum, item) => sum + item.profitTL, 0)
 
-    // Remaining weight goes to GYF
-    // Formula: Total - Stock - PPF - VIOP - Maden
-    const gyfWeight = Math.max(0, 1 - stockWeight - explicitPpfWeight - explicitViopWeight - explicitMadenWeight)
+  // Fund Volume estimation
+  const fundTotalCost = multiplierVal > 0 ? (totalCost / multiplierVal) : totalCost
 
-    // Separate stock and maden calculations
-    const stocks = calculatedPortfolio.filter(item => !item.isPreciousMetal)
-    const madens = calculatedPortfolio.filter(item => item.isPreciousMetal)
+  // Synthetic Profits
+  const stockWeight = multiplierVal
+  const explicitPpfWeight = ppfWeightVal
+  const explicitViopWeight = viopWeightVal
+  const explicitMadenWeight = madenWeightVal
+  const gyfWeight = Math.max(0, 1 - stockWeight - explicitPpfWeight - explicitViopWeight - explicitMadenWeight)
 
-    const stockCost = stocks.reduce((sum, item) => sum + item.totalCost, 0)
-    const stockProfitTL = stocks.reduce((sum, item) => sum + item.profitTL, 0)
-    const stockReturn = stockCost > 0 ? stockProfitTL / stockCost : 0
+  const ppfProfit = fundTotalCost * ppfRateVal * explicitPpfWeight
+  const gyfProfit = fundTotalCost * gyfRateVal * gyfWeight
+  const viopProfit = fundTotalCost * viopRateVal * explicitViopWeight
 
-    const madenCost = madens.reduce((sum, item) => sum + item.totalCost, 0)
-    const madenProfitTL = madens.reduce((sum, item) => sum + item.profitTL, 0)
-    const madenReturn = madenCost > 0 ? madenProfitTL / madenCost : 0
+  // Final Totals
+  const finalTotalProfit = stocksProfitTL + madensProfitTL + ppfProfit + gyfProfit + viopProfit
+  const totalReturnPercent = fundTotalCost > 0 ? (finalTotalProfit / fundTotalCost) * 100 : 0
 
-    const virtualStockProfit = totalCost * stockReturn * stockWeight
-    const virtualMadenProfit = totalCost * madenReturn * explicitMadenWeight
-
-    const ppfProfit = totalCost * ppfRateVal * explicitPpfWeight
-    const gyfProfit = totalCost * gyfRateVal * gyfWeight
-    const viopProfit = totalCost * viopRateVal * explicitViopWeight
-
-    // Total Profit
-    totalProfit = virtualStockProfit + virtualMadenProfit + ppfProfit + gyfProfit + viopProfit
-  }
-
-  const totalReturnPercent = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0
+  // Update totalProfit variable for subsequent use
+  totalProfit = finalTotalProfit
 
   // Sync totals to Firestore for Overview Page
   const isSyncingRef = useRef(false)
@@ -310,7 +301,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
       fundData.totalValue === undefined ||
       fundData.totalProfit === undefined ||
       Math.abs(fundData.totalValue - totalValue) > 1 ||
-      Math.abs(fundData.totalProfit - totalProfit) > 1
+      Math.abs(fundData.totalProfit - finalTotalProfit) > 1
     )
 
     // Initial sync (if never synced) or Time elapsed + Value changed
@@ -319,7 +310,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     )
 
     if (shouldUpdate) {
-      console.log(`💾 Auto-saving totals for ${fundCode}`, { totalValue, totalProfit })
+      console.log(`💾 Auto-saving totals for ${fundCode}`, { totalValue, totalProfit: finalTotalProfit })
       isSyncingRef.current = true
 
       // Update storage immediately to prevent other tabs/reloads from triggering
@@ -327,8 +318,8 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
       // Ensure no NaN/Infinity values are sent to Firestore
       const safePayload = {
-        totalValue: Number.isFinite(totalValue) ? totalValue : 0,
-        totalProfit: Number.isFinite(totalProfit) ? totalProfit : 0,
+        totalValue: Number.isFinite(fundTotalCost + finalTotalProfit) ? (fundTotalCost + finalTotalProfit) : 0,
+        totalProfit: Number.isFinite(finalTotalProfit) ? finalTotalProfit : 0,
         returnRate: Number.isFinite(totalReturnPercent) ? totalReturnPercent : 0
       }
 
@@ -338,21 +329,18 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
           isSyncingRef.current = false
         })
     }
-  }, [totalValue, totalProfit, totalReturnPercent, fundData, fundCode, portfolio])
-
-
+  }, [totalValue, finalTotalProfit, totalReturnPercent, fundData, fundCode, portfolio, fundTotalCost])
 
   // Add weights and map for table display
   const finalData = calculatedPortfolio.map(item => ({
     ...item,
     weight: totalValue > 0 ? ((item.currentValue / totalValue) * 100) : 0,
     value: item.currentValue, // Alias for table
-    profit: item.profitTL * (item.isPreciousMetal ? madenWeightVal : multiplierVal),    // Alias for table (Apply respective multiplier!)
+    profit: item.profitTL, // Display actual local profitTL
     logoUrl: logoMap[item.code] || item.logoUrl // Use global logo if available
   }))
 
   const sortedData = [...finalData].sort((a, b) => b.weight - a.weight)
-
   const handleAddStock = async (newStock) => {
     let newPortfolio = [...portfolio]
 
@@ -850,6 +838,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                       </span>
                     </div>
                   </div>
+
 
                   {/* VIOP Rate Input */}
                   <div>

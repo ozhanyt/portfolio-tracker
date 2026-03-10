@@ -348,17 +348,21 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
 
             const madenCost = madens.reduce((sum, item) => sum + item.totalCost, 0)
             const madenProfitTL = madens.reduce((sum, item) => sum + item.profit, 0)
-            const madenReturn = madenCost > 0 ? madenProfitTL / madenCost : 0
 
-            const virtualStockProfit = totalCost * stockReturn * stockWeight
-            const virtualMadenProfit = totalCost * madenReturn * explicitMadenWeight
+            // Base used for other components should be the TOTAL fund cost (Stock volume / multiplier)
+            // If multiplier is 0.3, and stock cost is 1.9B, fund cost is 6.3B
+            const fundTotalCost = multiplierVal > 0 ? (totalCost / multiplierVal) : totalCost
 
-            const ppfProfit = totalCost * ppfRateVal * explicitPpfWeight
-            const gyfProfit = totalCost * gyfRateVal * gyfWeight
-            const viopProfit = totalCost * viopRateVal * explicitViopWeight
+            const ppfProfit = fundTotalCost * ppfRateVal * explicitPpfWeight
+            const gyfProfit = fundTotalCost * gyfRateVal * gyfWeight
+            const viopProfit = fundTotalCost * viopRateVal * explicitViopWeight
 
-            // Total Profit 
-            totalProfit = virtualStockProfit + virtualMadenProfit + ppfProfit + gyfProfit + viopProfit
+            // Total Profit = Actual Stock Profit + Actual Maden Profit + Synthetic Profits
+            totalProfit = stockProfitTL + madenProfitTL + ppfProfit + gyfProfit + viopProfit
+
+            // Total Return should be based on the TOTAL fund cost
+            const finalTotalReturn = fundTotalCost > 0 ? ((totalProfit / fundTotalCost) * 100) : 0
+            return { totalReturn: finalTotalReturn, totalValue: fundTotalCost + totalProfit, totalProfit }
         }
 
         const totalReturn = totalCost > 0 ? ((totalProfit / totalCost) * 100) : 0

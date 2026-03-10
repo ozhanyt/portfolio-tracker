@@ -81,7 +81,7 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
         console.error(`❌ Error updating ${fund.id}:`, error)
     }
 
-    let { totalReturn, totalValue, totalProfit } = calculateFundReturn(liveHoldings, fund.multiplier, rates, fund.ppfRate, fund.ppfWeight, fund.gyfRate, fund.viopRate, fund.viopWeight, fund.viopLeverage)
+    let { totalReturn, totalValue, totalProfit } = calculateFundReturn(liveHoldings, fund.multiplier, rates, fund.ppfRate, fund.ppfWeight, fund.gyfRate, fund.viopRate, fund.viopWeight, fund.viopLeverage, fund.madenWeight)
 
     // Report live return to parent
     useEffect(() => {
@@ -288,7 +288,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
         return 0
     }
 
-    const calculateFundReturn = (portfolio, multiplier = 1, rates = {}, ppfRate = 0, ppfWeight = null, gyfRate = 0, viopRate = 0, viopWeight = 0, viopLeverage = 1) => {
+    const calculateFundReturn = (portfolio, multiplier = 1, rates = {}, ppfRate = 0, ppfWeight = null, gyfRate = 0, viopRate = 0, viopWeight = 0, viopLeverage = 1, madenWeight = 0) => {
         if (!portfolio || portfolio.length === 0) return { totalReturn: 0, totalValue: 0, totalProfit: 0 }
 
         const calculated = portfolio.map(item => {
@@ -303,6 +303,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
             totalCost = item.quantity * item.cost * previousRate
 
             return {
+                ...item,
                 currentValue,
                 totalCost,
                 profit: currentValue - totalCost
@@ -324,6 +325,8 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
         const viopWeightVal = parseTurkishFloat(viopWeight) || 0
         const viopLeverageVal = parseTurkishFloat(viopLeverage) || 1
 
+        const madenWeightVal = parseTurkishFloat(madenWeight) || 0
+
         const manualViopRate = parseTurkishFloat(viopRate) || 0;
         const viopRateVal = manualViopRate !== 0 ? manualViopRate : -(indexReturn * viopLeverageVal)
 
@@ -331,17 +334,31 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
             const stockWeight = multiplierVal
             const explicitPpfWeight = ppfWeightVal
             const explicitViopWeight = viopWeightVal
+            const explicitMadenWeight = madenWeightVal
 
             // Remaining weight goes to GYF
-            const gyfWeight = Math.max(0, 1 - stockWeight - explicitPpfWeight - explicitViopWeight)
+            const gyfWeight = Math.max(0, 1 - stockWeight - explicitPpfWeight - explicitViopWeight - explicitMadenWeight)
 
-            const stockProfit = totalProfit // Raw stock profit from previous calc
+            const stocks = calculated.filter(item => !item.isPreciousMetal)
+            const madens = calculated.filter(item => item.isPreciousMetal)
+
+            const stockCost = stocks.reduce((sum, item) => sum + item.totalCost, 0)
+            const stockProfitTL = stocks.reduce((sum, item) => sum + item.profit, 0)
+            const stockReturn = stockCost > 0 ? stockProfitTL / stockCost : 0
+
+            const madenCost = madens.reduce((sum, item) => sum + item.totalCost, 0)
+            const madenProfitTL = madens.reduce((sum, item) => sum + item.profit, 0)
+            const madenReturn = madenCost > 0 ? madenProfitTL / madenCost : 0
+
+            const virtualStockProfit = totalCost * stockReturn * stockWeight
+            const virtualMadenProfit = totalCost * madenReturn * explicitMadenWeight
+
             const ppfProfit = totalCost * ppfRateVal * explicitPpfWeight
             const gyfProfit = totalCost * gyfRateVal * gyfWeight
             const viopProfit = totalCost * viopRateVal * explicitViopWeight
 
             // Total Profit 
-            totalProfit = (stockProfit * stockWeight) + ppfProfit + gyfProfit + viopProfit
+            totalProfit = virtualStockProfit + virtualMadenProfit + ppfProfit + gyfProfit + viopProfit
         }
 
         const totalReturn = totalCost > 0 ? ((totalProfit / totalCost) * 100) : 0
@@ -377,7 +394,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                                         code: f.id,
                                         returnRate: liveReturns[f.id] !== undefined
                                             ? liveReturns[f.id]
-                                            : calculateFundReturn(f.holdings || [], f.multiplier, rates, f.ppfRate, f.ppfWeight, f.gyfRate, f.viopRate, f.viopWeight, f.viopLeverage).totalReturn
+                                            : calculateFundReturn(f.holdings || [], f.multiplier, rates, f.ppfRate, f.ppfWeight, f.gyfRate, f.viopRate, f.viopWeight, f.viopLeverage, f.madenWeight).totalReturn
                                     }))}
                                     updateTime={liveUpdateTime}
                                 />

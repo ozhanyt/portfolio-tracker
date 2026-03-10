@@ -11,7 +11,7 @@ import { useStockPriceUpdates } from '@/hooks/useStockPriceUpdates'
 import { getAllLogos } from '@/services/logoService'
 import { marketDebugData, getBist30Return } from '@/services/marketDataService'
 
-import { subscribeToFund, updateFundHoldings, updateFundMultiplier, updateFundTotals, updateFundPpfRate, updateFundPpfWeight, updateFundGyfRate, updateFundViopRate, updateFundViopWeight, updateFundViopLeverage } from '../services/firestoreService'
+import { subscribeToFund, updateFundHoldings, updateFundMultiplier, updateFundTotals, updateFundPpfRate, updateFundPpfWeight, updateFundGyfRate, updateFundViopRate, updateFundViopWeight, updateFundViopLeverage, updateFundMadenWeight } from '../services/firestoreService'
 import { useAdmin } from '@/contexts/AdminContext'
 
 export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
@@ -28,6 +28,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const [viopRate, setViopRate] = useState(0)
   const [viopWeight, setViopWeight] = useState(0)
   const [viopLeverage, setViopLeverage] = useState(1)
+  const [madenWeight, setMadenWeight] = useState(0)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingStock, setEditingStock] = useState(null)
   const [logoMap, setLogoMap] = useState({})
@@ -124,6 +125,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
         setViopRate(data.viopRate || 0)
         setViopWeight(data.viopWeight || 0)
         setViopLeverage(data.viopLeverage || 1)
+        setMadenWeight(data.madenWeight || 0)
       } else {
         // Fund not found
         navigate('/')
@@ -246,6 +248,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const gyfRateVal = parseTurkishFloat(gyfRate) || 0
   const viopWeightVal = parseTurkishFloat(viopWeight) || 0
   const viopLeverageVal = parseTurkishFloat(viopLeverage) || 1
+  const madenWeightVal = parseTurkishFloat(madenWeight) || 0
 
   // Dynamic VIOP Rate vs Manual VIOP Rate: If manual is 0, attempt auto index return
   const manualViopRate = parseTurkishFloat(viopRate) || 0;
@@ -255,18 +258,33 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     const stockWeight = multiplierVal
     const explicitPpfWeight = ppfWeightVal
     const explicitViopWeight = viopWeightVal
+    const explicitMadenWeight = madenWeightVal
 
     // Remaining weight goes to GYF
-    // Formula: Total - Stock - PPF - VIOP
-    const gyfWeight = Math.max(0, 1 - stockWeight - explicitPpfWeight - explicitViopWeight)
+    // Formula: Total - Stock - PPF - VIOP - Maden
+    const gyfWeight = Math.max(0, 1 - stockWeight - explicitPpfWeight - explicitViopWeight - explicitMadenWeight)
 
-    const stockProfit = totalProfit // Raw stock profit from previous calc
+    // Separate stock and maden calculations
+    const stocks = calculatedPortfolio.filter(item => !item.isPreciousMetal)
+    const madens = calculatedPortfolio.filter(item => item.isPreciousMetal)
+
+    const stockCost = stocks.reduce((sum, item) => sum + item.totalCost, 0)
+    const stockProfitTL = stocks.reduce((sum, item) => sum + item.profitTL, 0)
+    const stockReturn = stockCost > 0 ? stockProfitTL / stockCost : 0
+
+    const madenCost = madens.reduce((sum, item) => sum + item.totalCost, 0)
+    const madenProfitTL = madens.reduce((sum, item) => sum + item.profitTL, 0)
+    const madenReturn = madenCost > 0 ? madenProfitTL / madenCost : 0
+
+    const virtualStockProfit = totalCost * stockReturn * stockWeight
+    const virtualMadenProfit = totalCost * madenReturn * explicitMadenWeight
+
     const ppfProfit = totalCost * ppfRateVal * explicitPpfWeight
     const gyfProfit = totalCost * gyfRateVal * gyfWeight
     const viopProfit = totalCost * viopRateVal * explicitViopWeight
 
-    // Total Profit = (Stock Profit * Stock Weight) + (Cost * PPF Rate * PPF Weight) + (Cost * GYF Rate * GYF Weight) + (Cost * VIOP Rate * VIOP Weight)
-    totalProfit = (stockProfit * stockWeight) + ppfProfit + gyfProfit + viopProfit
+    // Total Profit
+    totalProfit = virtualStockProfit + virtualMadenProfit + ppfProfit + gyfProfit + viopProfit
   }
 
   const totalReturnPercent = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0
@@ -329,7 +347,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     ...item,
     weight: totalValue > 0 ? ((item.currentValue / totalValue) * 100) : 0,
     value: item.currentValue, // Alias for table
-    profit: item.profitTL * multiplierVal,    // Alias for table (Apply multiplier here!)
+    profit: item.profitTL * (item.isPreciousMetal ? madenWeightVal : multiplierVal),    // Alias for table (Apply respective multiplier!)
     logoUrl: logoMap[item.code] || item.logoUrl // Use global logo if available
   }))
 
@@ -389,6 +407,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const [isSavingViopRate, setIsSavingViopRate] = useState(false)
   const [isSavingViopWeight, setIsSavingViopWeight] = useState(false)
   const [isSavingViopLeverage, setIsSavingViopLeverage] = useState(false)
+  const [isSavingMadenWeight, setIsSavingMadenWeight] = useState(false)
 
   const handleMultiplierChange = async (e) => {
     let valStr = String(multiplier).replace(',', '.')
@@ -509,6 +528,23 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     }
   }
 
+  const handleMadenWeightChange = async (e) => {
+    let valStr = String(madenWeight).replace(',', '.')
+    let val = parseFloat(valStr)
+
+    if (isNaN(val)) val = 0
+
+    setIsSavingMadenWeight(true)
+    try {
+      await updateFundMadenWeight(fundCode, val)
+    } catch (error) {
+      console.error("Error saving Maden Weight:", error)
+      alert("Maden Ağırlığı kaydedilemedi!")
+    } finally {
+      setIsSavingMadenWeight(false)
+    }
+  }
+
   const [isSyncing, setIsSyncing] = useState(false)
 
   const handleSyncFromSheet = async () => {
@@ -534,11 +570,12 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
       // DON'T merge - Use fresh sheet data directly with only flags preserved
       const mergedHoldings = sheetHoldings.map(sheetItem => {
         const existingItem = portfolio.find(p => p.code === sheetItem.code)
-        // Only preserve user-set flags, everything else comes from sheet
+        // Preserve user-set flags
         return {
           ...sheetItem,
           isForeign: existingItem?.isForeign ?? false,
           isManual: existingItem?.isManual ?? false,
+          isPreciousMetal: existingItem?.isPreciousMetal ?? false,
           lastRolloverDate: existingItem?.lastRolloverDate ?? null
         }
       })
@@ -779,8 +816,31 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                       </span>
                     </div>
                     <p className="text-[10px] text-muted-foreground mt-2">
-                      GYF Ağırlığı = 1 - Hisse Ağırlığı - PPF Ağırlığı - VIOP Ağırlığı
+                      GYF Ağırlığı = 1 - Hisse Ağırlığı - PPF Ağırlığı - VIOP Ağırlığı - Maden Ağırlığı
                     </p>
+                  </div>
+
+                  {/* Maden Weight Input */}
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Maden Ağırlığı (GMSTR, GLDTR vb.)</label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="number"
+                        step="0.0001"
+                        value={madenWeight}
+                        onChange={(e) => setMadenWeight(e.target.value)}
+                        onBlur={handleMadenWeightChange}
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        placeholder="Örn: 0.0352"
+                      />
+                      <span className="text-xs text-muted-foreground whitespace-nowrap w-24">
+                        {isSavingMadenWeight ? (
+                          <span className="text-blue-500 animate-pulse">Kaydediliyor...</span>
+                        ) : (
+                          <span>Mevcut: {madenWeight}</span>
+                        )}
+                      </span>
+                    </div>
                   </div>
 
                   {/* VIOP Rate Input */}

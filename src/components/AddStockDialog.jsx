@@ -15,6 +15,7 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
         currency: 'TRY'
     })
     const [isManual, setIsManual] = useState(false)
+    const [isPreciousMetal, setIsPreciousMetal] = useState(false)
     const [isFundEntry, setIsFundEntry] = useState(false)
 
     useEffect(() => {
@@ -32,6 +33,7 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
             // If editing, preserve existing isManual setting. 
             // Default to true for funds or long descriptive names if not set.
             setIsManual(editingStock.isManual !== undefined ? editingStock.isManual : (isFundVal || isLongName))
+            setIsPreciousMetal(editingStock.isPreciousMetal || false)
         } else {
             setFormData({
                 code: '',
@@ -42,6 +44,7 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
             })
             setIsFundEntry(false)
             setIsManual(false)
+            setIsPreciousMetal(false)
         }
         setError(null)
     }, [editingStock, isOpen])
@@ -84,7 +87,8 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                     currentPrice: Number(formData.currentPrice),
                     isManual: true,
                     isForeign: isForeignVal,
-                    currency: formData.currency
+                    currency: formData.currency,
+                    isPreciousMetal
                 })
 
                 setFormData({ code: '', quantity: '', prevClose: '', currentPrice: '', currency: 'TRY' })
@@ -101,7 +105,8 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                     currentPrice: result.success ? result.currentPrice : 0,
                     isManual: false,
                     isForeign: isForeignVal,
-                    currency: formData.currency
+                    currency: formData.currency,
+                    isPreciousMetal
                 })
 
                 setFormData({ code: '', quantity: '', prevClose: '', currentPrice: '', currency: 'TRY' })
@@ -175,6 +180,22 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                             >
                                 Manuel Fiyat Girişi (Otomatik Güncelleme Kapalı)
+                            </label>
+                        </div>
+
+                        <div className="flex items-center space-x-2 py-2">
+                            <input
+                                type="checkbox"
+                                id="isPreciousMetal"
+                                checked={isPreciousMetal}
+                                onChange={(e) => setIsPreciousMetal(e.target.checked)}
+                                className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-600"
+                            />
+                            <label
+                                htmlFor="isPreciousMetal"
+                                className="text-sm font-medium leading-none text-purple-700 peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                                Bu Bir Maden Fonudur (GMSTR, GLDTR vb.)
                             </label>
                         </div>
 

@@ -127,12 +127,7 @@ export async function updateFundMadenWeight(fundId, madenWeight) {
         madenWeight
     })
 }
-export async function updateFundViopLeverage(fundId, viopLeverage) {
-    const fundRef = doc(db, FUNDS_COLLECTION, fundId)
-    await updateDoc(fundRef, {
-        viopLeverage
-    })
-}
+
 
 // Update fund name
 export async function updateFundName(fundId, name) {

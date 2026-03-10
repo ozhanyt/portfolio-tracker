@@ -205,7 +205,7 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                                 required
                                 type="number"
                                 min="0"
-                                step="0.000001"
+                                step="any"
                                 disabled={isLoading}
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 placeholder="0"
@@ -222,7 +222,7 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                                         required
                                         type="number"
                                         min="0"
-                                        step="0.000001"
+                                        step="any"
                                         disabled={isLoading}
                                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                         placeholder="0.00"
@@ -236,7 +236,7 @@ export function AddStockDialog({ isOpen, onClose, onAdd, editingStock }) {
                                         required
                                         type="number"
                                         min="0"
-                                        step="0.000001"
+                                        step="any"
                                         disabled={isLoading}
                                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                         placeholder="0.00"

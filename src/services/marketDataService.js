@@ -1,7 +1,11 @@
+import { getSheetApiUrl } from '@/lib/sheetApi';
+
 /**
  * Market data service for fetching market indicators via Google Apps Script proxy
  * BIST100, USDTRY, XAUTRYG (Gold), BTCUSD
  */
+
+const SHEET_API_URL = getSheetApiUrl();
 
 // Persistent cache for market data
 // Cache key includes version to invalidate old unnormalized data
@@ -71,7 +75,6 @@ export async function fetchMarketData() {
     marketDebugData.isFromCache = false;
 
     try {
-        const SHEET_API_URL = import.meta.env.VITE_SHEET_API_URL;
         const url = `${SHEET_API_URL}?market=true&t=${Date.now()}`;
         marketDebugData.lastUrl = url;
 
@@ -86,11 +89,9 @@ export async function fetchMarketData() {
         const rawData = await response.json();
         marketDebugData.lastStatus = 'Success';
         marketDebugData.itemCount = Array.isArray(rawData) ? rawData.length : 0;
-        console.log('📡 Market Data Fetched (raw):', rawData);
 
         // Normalize changePercent values before caching
         const data = normalizeMarketData(rawData);
-        console.log('📡 Market Data Normalized:', data);
 
         // Cache normalized data
         if (Array.isArray(data) && data.length > 0) {

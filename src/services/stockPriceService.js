@@ -1,11 +1,12 @@
 import { fetchMarketData, marketDebugData } from './marketDataService';
+import { getSheetApiUrl } from '@/lib/sheetApi';
 
 /**
  * New Stock Price Service using Google Sheets API
  * Bu servis artık Sheet'teki güncellenmiş veriyi kullanır (Yahoo quota sorunu çözülür)
  */
 
-const SHEET_API_URL = import.meta.env.VITE_SHEET_API_URL;
+const SHEET_API_URL = getSheetApiUrl();
 
 // Cache ayarları (1 dakika - Test için düşürüldü)
 const CACHE_DURATION = 5 * 60 * 1000;
@@ -230,7 +231,6 @@ export async function fetchStockPrices(symbols, options = {}) {
  * Intraday grafikler KAPALI
  */
 export async function fetchIntradayHistory(symbol, options = {}) {
-    console.log('Intraday charts disabled');
     return {
         symbol,
         data: [],

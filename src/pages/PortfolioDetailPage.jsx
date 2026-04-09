@@ -67,7 +67,6 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
   // Reset fresh data flag and clear portfolio when switching funds
   useEffect(() => {
-    console.log(`🔄 FUND SWITCH → ${fundCode}`)
     hasFreshDataRef.current = false
     setPortfolio([]) // Force clean slate - prevents cross-fund data pollution
     latestPricesRef.current = {} // Clear price cache - critical for multi-fund support
@@ -77,14 +76,6 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   useEffect(() => {
     const unsubscribe = subscribeToFund(fundCode, (data) => {
       if (data) {
-        console.log(`📥 FIRESTORE DATA for ${fundCode}:`, {
-          holdingsCount: data.holdings?.length,
-          firstHolding: data.holdings?.[0],
-          firstHoldingDetails: `${data.holdings?.[0]?.code} x ${data.holdings?.[0]?.quantity}`,
-          dstkf: data.holdings?.find(h => h.code === 'DSTKF'),
-          totalValue: data.totalValue,
-          totalProfit: data.totalProfit
-        })
         setFundData(data)
 
         // Merge incoming Firestore holdings with locally cached prices
@@ -114,10 +105,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
         // Only update portfolio if we don't have fresh local data
         // This prevents Firestore updates from overwriting fresh calculations
         if (!hasFreshDataRef.current) {
-          console.log(`✅ APPLYING Firestore data for ${fundCode} (${mergedHoldings.length} holdings)`)
           setPortfolio(mergedHoldings)
-        } else {
-          console.log(`🛡️ SKIPPING Firestore update for ${fundCode} (has fresh data)`)
         }
 
         setMultiplier(data.multiplier || 1)
@@ -288,7 +276,6 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   useEffect(() => {
     // Skip if portfolio is empty (fund switch in progress)
     if (!portfolio || portfolio.length === 0) {
-      console.log(`⏭️ Skipping totals update - portfolio empty for ${fundCode}`)
       return
     }
 
@@ -312,7 +299,6 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     )
 
     if (shouldUpdate) {
-      console.log(`💾 Auto-saving totals for ${fundCode}`, { totalValue, totalProfit: finalTotalProfit })
       isSyncingRef.current = true
 
       // Update storage immediately to prevent other tabs/reloads from triggering
@@ -546,19 +532,13 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const [isSyncing, setIsSyncing] = useState(false)
 
   const handleSyncFromSheet = async () => {
-    console.log(`🔵 SYNC START for fund: ${fundCode}`)
     if (!confirm("Google Sheet'ten tüm hisse listesini çekmek üzeresiniz. Mevcut listeniz güncellenecektir. Onaylıyor musunuz?")) return
 
     setIsSyncing(true)
     try {
       // Import dynamically to avoid circular dependency issues if any
       const { fetchFundHoldings } = await import('@/services/stockPriceService')
-      console.log(`📡 Fetching holdings for: ${fundCode}`)
       const sheetHoldings = await fetchFundHoldings(fundCode, { bypassCache: true })
-
-      console.log(`📥 SHEET DATA received for ${fundCode}:`, sheetHoldings.length, 'holdings')
-      console.log(`   First holding:`, sheetHoldings[0])
-      console.log(`   DSTKF in sheet:`, sheetHoldings.find(h => h.code === 'DSTKF'))
 
       if (sheetHoldings.length === 0) {
         alert("Sheet'ten veri çekilemedi veya liste boş.")
@@ -578,15 +558,9 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
         }
       })
 
-      console.log(`🔄 MERGED DATA for ${fundCode}:`, mergedHoldings.length, 'holdings')
-      console.log(`   First merged:`, mergedHoldings[0])
-      console.log(`   DSTKF merged:`, mergedHoldings.find(h => h.code === 'DSTKF'))
-
       // Update Firestore - Don't send totalValue/totalProfit as they will be recalculated
       // from the new holdings after the page reloads
-      console.log(`💾 SAVING to Firestore for fund: ${fundCode}`)
       await updateFundHoldings(fundCode, mergedHoldings)
-      console.log(`✅ SAVED successfully to Firestore for: ${fundCode}`)
 
       alert(`${mergedHoldings.length} hisse başarıyla güncellendi. Sayfa yenilenecek.`)
       // Force reload to recalculate totals with new holdings

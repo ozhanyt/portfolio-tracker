@@ -25,7 +25,6 @@ export function useMarketData(intervalMs = 300000) {
       try {
         const data = await fetchMarketData()
         if (!cancelled) {
-          console.log('Market Data Response:', data)
           setMarketData(data)
         }
       } finally {

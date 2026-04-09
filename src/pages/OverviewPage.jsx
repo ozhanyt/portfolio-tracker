@@ -111,11 +111,11 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
     }
 
     return (
-        <div ref={setNodeRef} style={style} className="relative group h-full">
+        <div ref={setNodeRef} style={style} className="relative h-full min-w-0 group">
             <Card
                 onClick={() => !isEditing && navigate(`/portfolio/${fund.id}`)}
                 className={cn(
-                    "border-l-4 border-l-primary shadow-md hover:shadow-xl transition-all cursor-pointer hover:scale-105 relative h-full flex flex-col",
+                    "relative flex h-full min-w-0 flex-col overflow-hidden border-l-4 border-l-primary shadow-md transition-all cursor-pointer hover:shadow-xl sm:hover:scale-105",
                     isDragging && "shadow-2xl scale-105 ring-2 ring-primary"
                 )}
             >
@@ -123,7 +123,7 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
                     <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                                <CardTitle className="text-2xl font-bold">{fund.code}</CardTitle>
+                                <CardTitle className="min-w-0 truncate text-xl font-bold sm:text-2xl">{fund.code}</CardTitle>
                                 {isAdmin && (
                                     <div
                                         {...attributes}
@@ -191,20 +191,20 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
                     <div className="space-y-3">
                         <div>
                             <p className="text-xs text-muted-foreground">Günlük Getiri</p>
-                            <p className={cn("text-3xl font-bold", totalReturn >= 0 ? "text-green-600" : "text-red-600")}>
+                            <p className={cn("break-words text-2xl font-bold sm:text-3xl", totalReturn >= 0 ? "text-green-600" : "text-red-600")}>
                                 {totalReturn >= 0 ? '+' : ''}{formatPercent(totalReturn)}
                             </p>
                         </div>
-                        <div className="flex justify-between items-center pt-2 border-t">
-                            <div>
+                        <div className="flex items-start justify-between gap-3 border-t pt-2">
+                            <div className="min-w-0 flex-1">
                                 <p className="text-xs text-muted-foreground">Portföy Değeri</p>
-                                <p className="text-sm font-medium">
+                                <p className="break-words text-sm font-medium">
                                     {totalValue.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 })}
                                 </p>
                             </div>
-                            <div className="text-right">
+                            <div className="min-w-0 flex-1 text-right">
                                 <p className="text-xs text-muted-foreground">Kar/Zarar</p>
-                                <p className={cn("text-sm font-medium", totalProfit >= 0 ? "text-green-600" : "text-red-600")}>
+                                <p className={cn("break-words text-sm font-medium", totalProfit >= 0 ? "text-green-600" : "text-red-600")}>
                                     {totalProfit >= 0 ? '+' : ''}{formatCurrency(totalProfit)}
                                 </p>
                             </div>
@@ -382,7 +382,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
     }
 
     return (
-        <div className="min-h-screen bg-background p-4 font-sans sm:p-6 lg:p-8">
+        <div className="min-h-screen overflow-x-hidden bg-background p-4 font-sans sm:p-6 lg:p-8">
             <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
                 <header className="flex flex-col gap-4 border-b pb-6 sm:flex-row sm:items-center sm:justify-between">
                     <div>

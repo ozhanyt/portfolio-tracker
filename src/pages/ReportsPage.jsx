@@ -1,13 +1,16 @@
 import { Link, useParams } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { REPORT_PERIODS, REPORT_TYPES, REPORT_TYPE_ORDER } from '@/data/reportCatalog'
-import { useReportsManifest } from '@/hooks/useReportsManifest'
+import { useReports } from '@/hooks/useReports'
+import { useAdmin } from '@/contexts/AdminContext'
+import { AdminReportsPanel } from '@/components/AdminReportsPanel'
 
 export function ReportsPage() {
   const { period = 'gunluk' } = useParams()
   const currentPeriod = REPORT_PERIODS[period] || REPORT_PERIODS.gunluk
-  const { manifest, isLoading, error } = useReportsManifest()
-  const reportItems = manifest[period] || []
+  const { reports, isLoading } = useReports()
+  const { isAdmin } = useAdmin()
+  const reportItems = reports.filter((item) => item.period === period)
 
   return (
     <div className="min-h-screen bg-background px-4 py-10 sm:px-6 lg:px-8">
@@ -36,6 +39,8 @@ export function ReportsPage() {
           ))}
         </nav>
 
+        {isAdmin && <AdminReportsPanel initialPeriod={period} reports={reports} />}
+
         <div className="grid gap-4 lg:grid-cols-3">
           {REPORT_TYPE_ORDER.map((reportType) => {
             const reportMeta = REPORT_TYPES[reportType]
@@ -53,10 +58,6 @@ export function ReportsPage() {
                   {isLoading ? (
                     <div className="rounded-md border border-dashed border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
                       Raporlar yükleniyor...
-                    </div>
-                  ) : error ? (
-                    <div className="rounded-md border border-dashed border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-                      Rapor listesi şu an yüklenemedi.
                     </div>
                   ) : items.length === 0 ? (
                     <div className="rounded-md border border-dashed border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">

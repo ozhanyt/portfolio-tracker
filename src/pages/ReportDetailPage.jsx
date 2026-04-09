@@ -1,14 +1,14 @@
 import { Link, useParams } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { REPORT_PERIODS, REPORT_TYPES } from '@/data/reportCatalog'
-import { useReportsManifest } from '@/hooks/useReportsManifest'
+import { useReports } from '@/hooks/useReports'
 
 export function ReportDetailPage() {
   const { period = 'gunluk', reportType = '', reportId = '' } = useParams()
-  const { manifest, isLoading, error } = useReportsManifest()
+  const { reports, isLoading } = useReports()
   const periodMeta = REPORT_PERIODS[period] || REPORT_PERIODS.gunluk
   const typeMeta = REPORT_TYPES[reportType]
-  const report = (manifest[period] || []).find((item) => item.id === reportId && item.reportType === reportType)
+  const report = reports.find((item) => item.id === reportId && item.reportType === reportType)
 
   if (isLoading) {
     return (
@@ -18,7 +18,7 @@ export function ReportDetailPage() {
     )
   }
 
-  if (error || !report || !typeMeta) {
+  if (!report || !typeMeta) {
     return (
       <div className="min-h-screen bg-background px-4 py-10 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl space-y-4">

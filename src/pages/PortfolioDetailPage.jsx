@@ -554,7 +554,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
       // Import dynamically to avoid circular dependency issues if any
       const { fetchFundHoldings } = await import('@/services/stockPriceService')
       console.log(`📡 Fetching holdings for: ${fundCode}`)
-      const sheetHoldings = await fetchFundHoldings(fundCode)
+      const sheetHoldings = await fetchFundHoldings(fundCode, { bypassCache: true })
 
       console.log(`📥 SHEET DATA received for ${fundCode}:`, sheetHoldings.length, 'holdings')
       console.log(`   First holding:`, sheetHoldings[0])

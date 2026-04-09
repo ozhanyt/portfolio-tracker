@@ -304,8 +304,10 @@ export async function fetchExchangeRates() {
 /**
  * Fetch all holdings for a specific fund from Google Sheet
  */
-export async function fetchFundHoldings(fundCode) {
-    const cached = getCachedFundHoldings(fundCode);
+export async function fetchFundHoldings(fundCode, options = {}) {
+    const { bypassCache = false } = options;
+
+    const cached = !bypassCache ? getCachedFundHoldings(fundCode) : null;
     if (cached) return cached;
 
     try {

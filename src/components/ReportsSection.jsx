@@ -1,29 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-
-const REPORT_PERIODS = [
-  {
-    slug: 'gunluk',
-    title: 'Günlük',
-    description: 'Günlük para girişi çıkışı, fon dağılım raporu ve TEFAS özeti.',
-  },
-  {
-    slug: 'haftalik',
-    title: 'Haftalık',
-    description: 'Hafta genelindeki para yönünü, dağılım değişimini ve özet raporları takip edin.',
-  },
-  {
-    slug: 'aylik',
-    title: 'Aylık',
-    description: 'Aylık perspektifte takipteki fonların dönemsel görünümünü tek yerde toplayın.',
-  },
-]
-
-const REPORT_TYPES = [
-  'Takipteki Fonların Para Girişi Çıkışı',
-  'Fon Dağılım Raporu',
-  'TEFAS Özeti',
-]
+import { REPORT_PERIODS, REPORT_TYPES, REPORT_TYPE_ORDER } from '@/data/reportCatalog'
 
 export function ReportsSection() {
   return (
@@ -37,8 +14,8 @@ export function ReportsSection() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        {REPORT_PERIODS.map((period) => (
-          <Link key={period.slug} to={`/raporlar/${period.slug}`} className="block">
+        {Object.entries(REPORT_PERIODS).map(([slug, period]) => (
+          <Link key={slug} to={`/raporlar/${slug}`} className="block">
             <Card className="h-full border-border/80 bg-card/70 transition-colors hover:bg-accent/30">
               <CardHeader className="space-y-2">
                 <p className="text-xs font-medium uppercase tracking-wide text-primary">Rapor Dönemi</p>
@@ -47,9 +24,9 @@ export function ReportsSection() {
               <CardContent className="space-y-4">
                 <p className="text-sm leading-7 text-muted-foreground">{period.description}</p>
                 <ul className="space-y-2 text-sm text-foreground">
-                  {REPORT_TYPES.map((reportType) => (
+                  {REPORT_TYPE_ORDER.map((reportType) => (
                     <li key={reportType} className="rounded-md border border-border/70 bg-muted/20 px-3 py-2">
-                      {reportType}
+                      {REPORT_TYPES[reportType].title}
                     </li>
                   ))}
                 </ul>

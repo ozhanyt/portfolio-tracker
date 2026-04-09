@@ -8,6 +8,7 @@ import { AboutPage } from './pages/AboutPage'
 import { PrivacyPage } from './pages/PrivacyPage'
 import { ContactPage } from './pages/ContactPage'
 import { ReportsPage } from './pages/ReportsPage'
+import { ReportDetailPage } from './pages/ReportDetailPage'
 import { AdminProvider, useAdmin } from './contexts/AdminContext'
 import { AdminLoginDialog } from './components/AdminLoginDialog'
 import { XIcon } from './components/icons/XIcon'
@@ -44,6 +45,7 @@ function getPageTitle(pathname) {
   if (pathname === '/iletisim') return 'İletişim | fontahmin.com.tr'
   if (pathname === '/raporlar/haftalik') return 'Haftalık Raporlar | fontahmin.com.tr'
   if (pathname === '/raporlar/aylik') return 'Aylık Raporlar | fontahmin.com.tr'
+  if (/^\/raporlar\/[^/]+\/[^/]+\/[^/]+$/.test(pathname)) return 'Rapor Detayı | fontahmin.com.tr'
   if (pathname.startsWith('/raporlar/')) return 'Günlük Raporlar | fontahmin.com.tr'
   return 'fontahmin.com.tr | Günlük fon görünümü'
 }
@@ -120,6 +122,7 @@ function AppContent() {
           <Route path="/gizlilik-politikasi" element={<PrivacyPage />} />
           <Route path="/iletisim" element={<ContactPage />} />
           <Route path="/raporlar/:period" element={<ReportsPage />} />
+          <Route path="/raporlar/:period/:reportType/:reportId" element={<ReportDetailPage />} />
         </Routes>
       </main>
 

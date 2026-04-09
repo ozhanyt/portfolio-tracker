@@ -7,6 +7,7 @@ import { useMarketData } from '@/hooks/useMarketData'
 import { subscribeToFunds, deleteFund, updateFundName, updateFundsOrder } from '@/services/firestoreService'
 import { useAdmin } from '@/contexts/AdminContext'
 import { AddFundDialog } from '@/components/AddFundDialog'
+import { ReportsSection } from '@/components/ReportsSection'
 import { ShareOnTwitterButton } from '@/components/ShareOnTwitterButton'
 import { useStockPriceUpdates } from '@/hooks/useStockPriceUpdates'
 import { marketDebugData, getBist30Return } from '@/services/marketDataService'
@@ -582,6 +583,8 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                         </CardContent>
                     </Card>
                 </div>
+
+                <ReportsSection />
 
                 <AddFundDialog
                     isOpen={isAddFundOpen}

@@ -4,6 +4,9 @@ import { logEvent } from 'firebase/analytics'
 import { Lock, AlertTriangle } from 'lucide-react'
 import { OverviewPage } from './pages/OverviewPage'
 import { PortfolioDetailPage } from './pages/PortfolioDetailPage'
+import { AboutPage } from './pages/AboutPage'
+import { PrivacyPage } from './pages/PrivacyPage'
+import { ContactPage } from './pages/ContactPage'
 import { AdminProvider, useAdmin } from './contexts/AdminContext'
 import { AdminLoginDialog } from './components/AdminLoginDialog'
 import { XIcon } from './components/icons/XIcon'
@@ -41,9 +44,17 @@ function AnalyticsTracker() {
     const location = useLocation()
 
     useEffect(() => {
-        const pageTitle = location.pathname.startsWith('/portfolio/')
-            ? 'Fon Detayı | fontahmin.com.tr'
-            : 'fontahmin.com.tr | Günlük fon görünümü'
+        let pageTitle = 'fontahmin.com.tr | Günlük fon görünümü'
+
+        if (location.pathname.startsWith('/portfolio/')) {
+            pageTitle = 'Fon Detayı | fontahmin.com.tr'
+        } else if (location.pathname === '/hakkinda') {
+            pageTitle = 'Hakkında | fontahmin.com.tr'
+        } else if (location.pathname === '/gizlilik-politikasi') {
+            pageTitle = 'Gizlilik Politikası | fontahmin.com.tr'
+        } else if (location.pathname === '/iletisim') {
+            pageTitle = 'İletişim | fontahmin.com.tr'
+        }
 
         document.title = pageTitle
 
@@ -106,11 +117,25 @@ function AppContent() {
                 <Routes>
                     <Route path="/" element={<OverviewPage isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />} />
                     <Route path="/portfolio/:fundCode" element={<PortfolioDetailPage isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />} />
+                    <Route path="/hakkinda" element={<AboutPage />} />
+                    <Route path="/gizlilik-politikasi" element={<PrivacyPage />} />
+                    <Route path="/iletisim" element={<ContactPage />} />
                 </Routes>
             </main>
 
             <footer className="border-t py-6 bg-muted/20">
-                <div className="container mx-auto px-4 flex flex-col items-center gap-2 text-sm text-muted-foreground">
+                <div className="container mx-auto px-4 flex flex-col items-center gap-3 text-sm text-muted-foreground">
+                    <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
+                        <Link to="/hakkinda" className="hover:text-foreground transition-colors">
+                            Hakkında
+                        </Link>
+                        <Link to="/gizlilik-politikasi" className="hover:text-foreground transition-colors">
+                            Gizlilik Politikası
+                        </Link>
+                        <Link to="/iletisim" className="hover:text-foreground transition-colors">
+                            İletişim
+                        </Link>
+                    </nav>
                     <div className="flex items-center gap-2">
                         <span>Geliştirici:</span>
                         <a

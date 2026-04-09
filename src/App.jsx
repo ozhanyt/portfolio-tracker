@@ -42,8 +42,8 @@ function AnalyticsTracker() {
 
     useEffect(() => {
         const pageTitle = location.pathname.startsWith('/portfolio/')
-            ? 'Fon Detayi | fontahmin.com.tr'
-            : 'fontahmin.com.tr | Gunluk fon gorunumu'
+            ? 'Fon Detayı | fontahmin.com.tr'
+            : 'fontahmin.com.tr | Günlük fon görünümü'
 
         document.title = pageTitle
 
@@ -93,7 +93,7 @@ function AppContent() {
                     <button
                         onClick={() => setIsAdminLoginOpen(true)}
                         className={`p-2 rounded-full transition-colors ${isAdmin ? 'text-green-500 bg-green-500/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
-                        title={isAdmin ? 'Yonetici modu aktif' : 'Yonetici girisi'}
+                        title={isAdmin ? 'Yönetici modu aktif' : 'Yönetici girişi'}
                     >
                         <Lock className="h-4 w-4" />
                     </button>
@@ -112,7 +112,7 @@ function AppContent() {
             <footer className="border-t py-6 bg-muted/20">
                 <div className="container mx-auto px-4 flex flex-col items-center gap-2 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
-                        <span>Gelistirici:</span>
+                        <span>Geliştirici:</span>
                         <a
                             href="https://x.com/sevketozhan"
                             target="_blank"
@@ -120,11 +120,11 @@ function AppContent() {
                             className="flex items-center gap-1 text-foreground hover:text-primary transition-colors font-medium"
                         >
                             <XIcon className="h-3 w-3" />
-                            Sevket Ozhan
+                            Şevket Özhan
                         </a>
                     </div>
                     <p className="text-xs opacity-70">
-                        Bu site sadece bilgilendirme amaclidir. Yatirim tavsiyesi degildir.
+                        Bu site sadece bilgilendirme amaçlıdır. Yatırım tavsiyesi değildir.
                     </p>
                 </div>
             </footer>

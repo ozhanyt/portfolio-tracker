@@ -386,8 +386,8 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
             <div className="max-w-7xl mx-auto space-y-8">
                 <header className="flex items-center justify-between pb-6 border-b">
                     <div>
-                        <h1 className="text-4xl font-bold tracking-tight text-foreground">Gunluk Fon Gorunumu</h1>
-                        <p className="text-muted-foreground mt-1">Tum fonlar icin tek ekranda hizli ozet.</p>
+                        <h1 className="text-4xl font-bold tracking-tight text-foreground">Günlük Fon Görünümü</h1>
+                        <p className="text-muted-foreground mt-1">Tüm fonlar için tek ekranda hızlı özet.</p>
                     </div>
                     <div className="flex gap-3">
                         {isAdmin && (

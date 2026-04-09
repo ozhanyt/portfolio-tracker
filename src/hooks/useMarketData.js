@@ -10,15 +10,30 @@ export function useMarketData(intervalMs = 300000) {
 
   useEffect(() => {
     const updateMarketData = async () => {
+      if (typeof document !== 'undefined' && document.hidden) {
+        return
+      }
+
       const data = await fetchMarketData()
-      console.log('📊 Market Data Response:', data);
+      console.log('Market Data Response:', data)
       setMarketData(data)
     }
 
     updateMarketData()
     const interval = setInterval(updateMarketData, intervalMs)
 
-    return () => clearInterval(interval)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        updateMarketData()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [intervalMs])
 
   return { marketData, isLoading: marketData.length === 0 }

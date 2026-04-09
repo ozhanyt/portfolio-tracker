@@ -29,13 +29,27 @@ export function useStockPriceUpdates(portfolio, onUpdate, fundCode, intervalMs =
     // Fetch Rates on mount and periodically
     useEffect(() => {
         const fetchRates = async () => {
+            if (typeof document !== 'undefined' && document.hidden) {
+                return
+            }
             const exchangeRates = await fetchExchangeRates()
             setRates(exchangeRates)
         }
         fetchRates()
         // Fetch rates every 5 minutes
         const rateInterval = setInterval(fetchRates, 300000)
-        return () => clearInterval(rateInterval)
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                fetchRates()
+            }
+        }
+
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+
+        return () => {
+            clearInterval(rateInterval)
+            document.removeEventListener('visibilitychange', handleVisibilityChange)
+        }
     }, [])
 
     useEffect(() => {
@@ -44,6 +58,10 @@ export function useStockPriceUpdates(portfolio, onUpdate, fundCode, intervalMs =
         }
 
         const updatePrices = async () => {
+            if (typeof document !== 'undefined' && document.hidden) {
+                return
+            }
+
             setIsUpdating(true)
             setError(null)
 
@@ -105,10 +123,18 @@ export function useStockPriceUpdates(portfolio, onUpdate, fundCode, intervalMs =
 
         // Set up interval for periodic updates
         const interval = setInterval(updatePrices, intervalMs)
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                updatePrices()
+            }
+        }
+
+        document.addEventListener('visibilitychange', handleVisibilityChange)
 
         // Cleanup
         return () => {
             clearInterval(interval)
+            document.removeEventListener('visibilitychange', handleVisibilityChange)
         }
     }, [portfolioKey, intervalMs]) // Re-run only if portfolio or interval changes
 

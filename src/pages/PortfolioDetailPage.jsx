@@ -14,6 +14,8 @@ import { marketDebugData, getBist30Return } from '@/services/marketDataService'
 import { subscribeToFund, updateFundHoldings, updateFundMultiplier, updateFundTotals, updateFundPpfRate, updateFundPpfWeight, updateFundGyfRate, updateFundViopRate, updateFundViopWeight, updateFundViopLeverage, updateFundMadenWeight } from '../services/firestoreService'
 import { useAdmin } from '@/contexts/AdminContext'
 
+const DETAIL_POLL_MS = 5 * 60 * 1000
+
 export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const { fundCode } = useParams()
   const navigate = useNavigate()
@@ -183,7 +185,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
     })
   }
 
-  const { lastUpdate, isUpdating, error, rates } = useStockPriceUpdates(portfolio, handlePriceUpdate, fundCode, 60000)
+  const { lastUpdate, isUpdating, error, rates } = useStockPriceUpdates(portfolio, handlePriceUpdate, fundCode, DETAIL_POLL_MS)
 
   // Calculate portfolio values
   const calculatedPortfolio = portfolio.map(item => {

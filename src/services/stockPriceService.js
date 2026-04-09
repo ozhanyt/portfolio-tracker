@@ -8,8 +8,10 @@ import { fetchMarketData, marketDebugData } from './marketDataService';
 const SHEET_API_URL = import.meta.env.VITE_SHEET_API_URL;
 
 // Cache ayarları (1 dakika - Test için düşürüldü)
-const CACHE_DURATION = 1 * 60 * 1000;
+const CACHE_DURATION = 5 * 60 * 1000;
 const CACHE_PREFIX = 'portfolio_cache_';
+const FUND_CACHE_PREFIX = 'fund_holdings_cache_';
+const FUND_CACHE_DURATION = 5 * 60 * 1000;
 
 function getCacheKey(symbol, fundCode) {
     if (fundCode) {
@@ -68,6 +70,46 @@ function getStalePrice(symbol, fundCode) {
         return JSON.parse(item).data;
     } catch (e) {
         return null;
+    }
+}
+
+function getFundCacheKey(fundCode) {
+    return `${FUND_CACHE_PREFIX}${String(fundCode).trim().toUpperCase()}`;
+}
+
+function getCachedFundHoldings(fundCode) {
+    try {
+        const item = localStorage.getItem(getFundCacheKey(fundCode));
+        if (!item) return null;
+
+        const cached = JSON.parse(item);
+        if (Date.now() - cached.timestamp < FUND_CACHE_DURATION) {
+            return cached.data;
+        }
+        return null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function getStaleFundHoldings(fundCode) {
+    try {
+        const item = localStorage.getItem(getFundCacheKey(fundCode));
+        if (!item) return null;
+        return JSON.parse(item).data;
+    } catch (e) {
+        return null;
+    }
+}
+
+function setCachedFundHoldings(fundCode, data) {
+    try {
+        localStorage.setItem(getFundCacheKey(fundCode), JSON.stringify({
+            timestamp: Date.now(),
+            data
+        }));
+    } catch (e) {
+        // Ignore
     }
 }
 
@@ -263,8 +305,10 @@ export async function fetchExchangeRates() {
  * Fetch all holdings for a specific fund from Google Sheet
  */
 export async function fetchFundHoldings(fundCode) {
+    const cached = getCachedFundHoldings(fundCode);
+    if (cached) return cached;
+
     try {
-        // Cache busting with timestamp
         const url = `${SHEET_API_URL}?fund=${encodeURIComponent(fundCode)}&t=${Date.now()}`;
         const response = await fetch(url);
 
@@ -276,7 +320,7 @@ export async function fetchFundHoldings(fundCode) {
 
         // Ensure data is an array
         if (Array.isArray(data)) {
-            return data.map(item => {
+            const normalized = data.map(item => {
                 // Map fields from Sheet API (handles both 'code' and 'symbol', 'currentPrice' and 'price')
                 const code = item.code || item.symbol;
                 const currentPrice = item.currentPrice !== undefined ? Number(item.currentPrice) : Number(item.price || 0);
@@ -301,11 +345,13 @@ export async function fetchFundHoldings(fundCode) {
                     isManual: false
                 };
             });
+            setCachedFundHoldings(fundCode, normalized);
+            return normalized;
         }
 
         return [];
     } catch (error) {
         console.error(`Error fetching holdings for ${fundCode}:`, error);
-        return [];
+        return getStaleFundHoldings(fundCode) || [];
     }
 }

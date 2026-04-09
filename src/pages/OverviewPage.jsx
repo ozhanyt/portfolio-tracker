@@ -29,6 +29,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+const OVERVIEW_POLL_MS = 5 * 60 * 1000
+
 function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculateFundReturn, getCurrentTime, rates, onReturnUpdate }) {
     const {
         attributes,
@@ -75,7 +77,7 @@ function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculate
         } else {
             // console.warn(`⚠️ No updateTime found for ${fund.id}`)
         }
-    }, fund.id, 60000)
+    }, fund.id, OVERVIEW_POLL_MS)
 
     if (error) {
         console.error(`❌ Error updating ${fund.id}:`, error)
@@ -224,7 +226,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
     const [funds, setFunds] = useState([])
     const [liveUpdateTime, setLiveUpdateTime] = useState(null)
     const [liveReturns, setLiveReturns] = useState({})
-    const { marketData, isLoading } = useMarketData(60000)
+    const { marketData, isLoading } = useMarketData(OVERVIEW_POLL_MS)
     const { isAdmin } = useAdmin()
     const [isAddFundOpen, setIsAddFundOpen] = useState(false)
     const [activeId, setActiveId] = useState(null);
@@ -241,14 +243,14 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
     );
 
     // Use hook just to get rates (pass empty portfolio)
-    const { rates } = useStockPriceUpdates([], null, null, 60000)
+    const { rates } = useStockPriceUpdates([], null, null, OVERVIEW_POLL_MS)
 
     // Separate hook for first fund to get live updateTime
     const firstFundHoldings = funds[0]?.holdings || []
     useStockPriceUpdates(firstFundHoldings, (updatedHoldings) => {
         const time = updatedHoldings.find(h => h.updateTime)?.updateTime
         if (time) setLiveUpdateTime(time)
-    }, funds[0]?.id, 60000)
+    }, funds[0]?.id, OVERVIEW_POLL_MS)
 
     useEffect(() => {
         const unsubscribe = subscribeToFunds((fundsData) => {

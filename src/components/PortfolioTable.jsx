@@ -22,9 +22,12 @@ export function PortfolioTable({ data, onDelete, onEdit, onUpdateLogo, onToggleM
                 <CardHeader>
                     <CardTitle>Portföy Dağılımı</CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <div className="rounded-md border overflow-x-auto">
-                        <table className="w-full text-sm text-center">
+                <CardContent className="px-0 sm:px-6">
+                    <div className="px-6 pb-3 text-xs text-muted-foreground sm:hidden">
+                        Tabloyu görmek için sağa sola kaydırın.
+                    </div>
+                    <div className="overflow-x-auto rounded-md border">
+                        <table className="min-w-[920px] text-sm text-center">
                             <thead className="bg-muted/50 text-muted-foreground font-medium">
                                 <tr>
                                     <th className="p-4 text-left">Hisse</th>

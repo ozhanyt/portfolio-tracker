@@ -602,13 +602,13 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
 
 
-  if (!fundData) return <div className="p-8 text-center">Yükleniyor...</div>
+  if (!fundData) return <div className="p-4 text-center sm:p-8">Yükleniyor...</div>
 
   return (
-    <div className="min-h-screen bg-background p-8 font-sans">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <header className="flex items-center justify-between pb-6 border-b">
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-background p-4 font-sans sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
+        <header className="flex flex-col gap-4 border-b pb-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-3 sm:gap-4">
             <button
               onClick={() => navigate('/')}
               className="p-2 hover:bg-accent rounded-full transition-colors"
@@ -616,11 +616,11 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
-              <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">{fundCode}</h1>
-              <p className="text-muted-foreground mt-1">{fundData.name}</p>
+              <h1 className="break-all bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:text-4xl">{fundCode}</h1>
+              <p className="mt-1 text-sm text-muted-foreground sm:text-base">{fundData.name}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-wrap items-start gap-3 lg:w-auto lg:items-center lg:justify-end">
             {/* Last update indicator */}
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 text-xs text-muted-foreground">
               <RefreshCw className={cn("h-3 w-3", isUpdating && "animate-spin")} />
@@ -664,7 +664,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
               )}
             </button>
             {isAdmin && (
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={handleSyncFromSheet}
                   disabled={isSyncing}
@@ -688,10 +688,10 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
 
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
           {/* Left Column: Total Value & Top Gainers */}
           <div className="space-y-6">
-            <Card className="border-l-4 border-l-primary shadow-md hover:shadow-lg transition-shadow h-[180px] flex flex-col justify-center">
+            <Card className="border-l-4 border-l-primary shadow-md transition-shadow hover:shadow-lg min-h-[180px] sm:h-[180px] flex flex-col justify-center">
               <CardHeader className="flex flex-col items-center justify-center space-y-2 pb-2">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <CardTitle className="text-sm font-medium">
@@ -701,7 +701,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                 </div>
               </CardHeader>
               <CardContent className="text-center">
-                <div className="text-4xl font-bold tracking-tight">
+                <div className="text-3xl font-bold tracking-tight sm:text-4xl">
                   {totalValue.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 })}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
@@ -723,7 +723,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                   {/* Stock Weight Input */}
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">Hisse Ağırlık Oranı</label>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                       <input
                         type="number"
                         step="0.0001"
@@ -733,7 +733,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                         className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         placeholder="Örn: 0.85"
                       />
-                      <span className="text-xs text-muted-foreground whitespace-nowrap w-24">
+                      <span className="w-full text-xs text-muted-foreground sm:w-24">
                         {isSavingMultiplier ? (
                           <span className="text-blue-500 animate-pulse">Kaydediliyor...</span>
                         ) : (
@@ -746,7 +746,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                   {/* PPF Rate Input */}
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">PPF Oranı (Mevduat/Repo)</label>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                       <input
                         type="number"
                         step="0.0001"
@@ -756,7 +756,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                         className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         placeholder="Örn: 0.05"
                       />
-                      <span className="text-xs text-muted-foreground whitespace-nowrap w-24">
+                      <span className="w-full text-xs text-muted-foreground sm:w-24">
                         {isSavingPpfRate ? (
                           <span className="text-blue-500 animate-pulse">Kaydediliyor...</span>
                         ) : (
@@ -772,7 +772,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                   {/* PPF Weight Input */}
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">PPF Ağırlığı (Opsiyonel)</label>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                       <input
                         type="number"
                         step="0.0001"
@@ -782,7 +782,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                         className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         placeholder="Örn: 0.20"
                       />
-                      <span className="text-xs text-muted-foreground whitespace-nowrap w-24">
+                      <span className="w-full text-xs text-muted-foreground sm:w-24">
                         {isSavingPpfWeight ? (
                           <span className="text-blue-500 animate-pulse">Kaydediliyor...</span>
                         ) : (
@@ -795,7 +795,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                   {/* GYF Rate Input */}
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">GYF Oranı (Getiri)</label>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                       <input
                         type="number"
                         step="0.0001"
@@ -805,7 +805,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                         className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         placeholder="Örn: 0.10"
                       />
-                      <span className="text-xs text-muted-foreground whitespace-nowrap w-24">
+                      <span className="w-full text-xs text-muted-foreground sm:w-24">
                         {isSavingGyfRate ? (
                           <span className="text-blue-500 animate-pulse">Kaydediliyor...</span>
                         ) : (
@@ -821,7 +821,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                   {/* Maden Weight Input */}
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">Maden Ağırlığı (GMSTR, GLDTR vb.)</label>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                       <input
                         type="number"
                         step="0.0001"
@@ -831,7 +831,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                         className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                         placeholder="Örn: 0.0352"
                       />
-                      <span className="text-xs text-muted-foreground whitespace-nowrap w-24">
+                      <span className="w-full text-xs text-muted-foreground sm:w-24">
                         {isSavingMadenWeight ? (
                           <span className="text-blue-500 animate-pulse">Kaydediliyor...</span>
                         ) : (
@@ -850,7 +850,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                         Oto: {(-indexReturn * viopLeverageVal * 100).toFixed(2)}%
                       </span>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                       <input
                         type="number"
                         step="0.0001"
@@ -860,7 +860,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                         className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         placeholder="0 bırakırsanız otomatik hesaplanır"
                       />
-                      <span className="text-xs text-muted-foreground whitespace-nowrap w-24">
+                      <span className="w-full text-xs text-muted-foreground sm:w-24">
                         {isSavingViopRate ? (
                           <span className="text-blue-500 animate-pulse">Kaydediliyor...</span>
                         ) : (
@@ -873,7 +873,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                   {/* VIOP Weight Input */}
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">VIOP Ağırlığı</label>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                       <input
                         type="number"
                         step="0.0001"
@@ -883,7 +883,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                         className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         placeholder="Örn: 0.10"
                       />
-                      <span className="text-xs text-muted-foreground whitespace-nowrap w-24">
+                      <span className="w-full text-xs text-muted-foreground sm:w-24">
                         {isSavingViopWeight ? (
                           <span className="text-blue-500 animate-pulse">Kaydediliyor...</span>
                         ) : (
@@ -896,7 +896,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                   {/* VIOP Leverage Input */}
                   <div className="pb-4">
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">VIOP Kaldıracı</label>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                       <input
                         type="number"
                         step="0.1"
@@ -906,7 +906,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                         className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         placeholder="Örn: 1.0 (Birebir)"
                       />
-                      <span className="text-xs text-muted-foreground whitespace-nowrap w-24">
+                      <span className="w-full text-xs text-muted-foreground sm:w-24">
                         {isSavingViopLeverage ? (
                           <span className="text-blue-500 animate-pulse">Kaydediliyor...</span>
                         ) : (
@@ -930,7 +930,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-4 gap-2 mb-2 text-xs font-semibold text-muted-foreground border-b pb-2">
+                <div className="mb-2 grid grid-cols-4 gap-1 border-b pb-2 text-[10px] font-semibold text-muted-foreground sm:gap-2 sm:text-xs">
                   <span className="text-center">Hisse</span>
                   <span className="text-center">K/Z (TL)</span>
                   <span className="text-center">Fark %</span>
@@ -947,7 +947,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                         : 0;
 
                       return (
-                        <div key={item.code} className="grid grid-cols-4 items-center text-xs sm:text-sm p-2 hover:bg-muted/50 rounded-md transition-colors gap-2">
+                        <div key={item.code} className="grid grid-cols-4 items-center gap-1 rounded-md p-1.5 text-[10px] transition-colors hover:bg-muted/50 sm:gap-2 sm:p-2 sm:text-sm">
                           <span className="font-bold text-center whitespace-nowrap overflow-hidden text-ellipsis" title={item.code}>{item.code}</span>
                           <span className="font-mono font-medium text-green-600 text-center truncate">
                             +{formatCurrency(item.profitTL * multiplierVal, 0)}
@@ -968,7 +968,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
 
           {/* Right Column: Daily Return & Top Losers */}
           <div className="space-y-6">
-            <Card className="border-l-4 border-l-green-500 shadow-md hover:shadow-lg transition-shadow h-[180px] flex flex-col justify-center">
+            <Card className="border-l-4 border-l-green-500 shadow-md transition-shadow hover:shadow-lg min-h-[180px] sm:h-[180px] flex flex-col justify-center">
               <CardHeader className="flex flex-col items-center justify-center space-y-2 pb-2">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <CardTitle className="text-sm font-medium">
@@ -979,7 +979,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
               </CardHeader>
               <CardContent className="text-center">
                 <div className="flex flex-col items-center">
-                  <span className={cn("text-4xl font-bold", totalProfit >= 0 ? "text-green-600" : "text-red-600")}>
+                  <span className={cn("text-3xl font-bold sm:text-4xl", totalProfit >= 0 ? "text-green-600" : "text-red-600")}>
                     {totalProfit >= 0 ? '+' : ''}{formatPercent(totalReturnPercent)}
                   </span>
                   <span className="text-lg text-muted-foreground font-medium mt-2">
@@ -997,7 +997,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-4 gap-2 mb-2 text-xs font-semibold text-muted-foreground border-b pb-2">
+                <div className="mb-2 grid grid-cols-4 gap-1 border-b pb-2 text-[10px] font-semibold text-muted-foreground sm:gap-2 sm:text-xs">
                   <span className="text-center">Hisse</span>
                   <span className="text-center">K/Z (TL)</span>
                   <span className="text-center">Fark %</span>
@@ -1014,7 +1014,7 @@ export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
                         : 0;
 
                       return (
-                        <div key={item.code} className="grid grid-cols-4 items-center text-xs sm:text-sm p-2 hover:bg-muted/50 rounded-md transition-colors gap-2">
+                        <div key={item.code} className="grid grid-cols-4 items-center gap-1 rounded-md p-1.5 text-[10px] transition-colors hover:bg-muted/50 sm:gap-2 sm:p-2 sm:text-sm">
                           <span className="font-bold text-center whitespace-nowrap overflow-hidden text-ellipsis" title={item.code}>{item.code}</span>
                           <span className={cn("font-mono font-medium text-center truncate", item.profitTL < 0 ? "text-red-600" : "text-gray-600")}>
                             {formatCurrency(item.profitTL * multiplierVal, 0)}

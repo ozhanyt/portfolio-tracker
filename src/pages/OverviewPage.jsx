@@ -382,16 +382,16 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
     }
 
     return (
-        <div className="min-h-screen bg-background p-8 font-sans">
-            <div className="max-w-7xl mx-auto space-y-8">
-                <header className="flex items-center justify-between pb-6 border-b">
+        <div className="min-h-screen bg-background p-4 font-sans sm:p-6 lg:p-8">
+            <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
+                <header className="flex flex-col gap-4 border-b pb-6 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-4xl font-bold tracking-tight text-foreground">Günlük Fon Görünümü</h1>
-                        <p className="text-muted-foreground mt-1">Tüm fonlar için tek ekranda hızlı özet.</p>
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Günlük Fon Görünümü</h1>
+                        <p className="mt-1 text-sm text-muted-foreground sm:text-base">Tüm fonlar için tek ekranda hızlı özet.</p>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex w-full flex-wrap gap-3 sm:w-auto sm:justify-end">
                         {isAdmin && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                                 <ShareOnTwitterButton
                                     funds={(funds || []).map(f => ({
                                         code: f.id,
@@ -442,13 +442,13 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                 </header>
 
                 {/* Market Indicators */}
-                <div className="bg-card backdrop-blur rounded-lg px-6 py-4 border border-border">
+                <div className="bg-card rounded-lg border border-border px-4 py-4 backdrop-blur sm:px-6">
                     {isLoading ? (
                         <div className="text-center text-sm text-muted-foreground py-2">
                             Yükleniyor...
                         </div>
                     ) : (
-                        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                             {marketData
                                 .filter(m => ['USDTRY', 'BIST100', 'BTCUSD', 'GOLD_TL', 'SILVER_TL', 'BIST30'].includes(m.symbol))
                                 .sort((a, b) => {
@@ -504,7 +504,7 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                         items={(funds || []).map(f => f.id)}
                         strategy={rectSortingStrategy}
                     >
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {(funds || []).map((fund) => {
                                 return (
                                     <SortableFundCard

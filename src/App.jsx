@@ -1,11 +1,59 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom'
 import { OverviewPage } from './pages/OverviewPage'
 import { PortfolioDetailPage } from './pages/PortfolioDetailPage'
 import { AdminProvider, useAdmin } from './contexts/AdminContext'
 import { AdminLoginDialog } from './components/AdminLoginDialog'
 import { Lock, AlertTriangle } from 'lucide-react'
 import { XIcon } from './components/icons/XIcon'
+import { analytics } from './firebase'
+import { logEvent } from 'firebase/analytics'
+
+const PRIMARY_HOST = 'fontahmin.com.tr'
+const LEGACY_HOSTS = new Set([
+    'www.fontahmin.com.tr',
+    'portfolio-tracker-lilac-mu.vercel.app'
+])
+
+function CanonicalRedirect() {
+    const location = useLocation()
+
+    useEffect(() => {
+        if (typeof window === 'undefined') {
+            return
+        }
+
+        const { hostname, pathname, search, hash, protocol } = window.location
+        if (!LEGACY_HOSTS.has(hostname)) {
+            return
+        }
+
+        const nextUrl = `https://${PRIMARY_HOST}${pathname}${search}${hash}`
+        if (`${protocol}//${hostname}${pathname}${search}${hash}` !== nextUrl) {
+            window.location.replace(nextUrl)
+        }
+    }, [location])
+
+    return null
+}
+
+function AnalyticsTracker() {
+    const location = useLocation()
+
+    useEffect(() => {
+        if (!analytics || typeof window === 'undefined') {
+            return
+        }
+
+        logEvent(analytics, 'page_view', {
+            page_title: document.title,
+            page_location: window.location.href,
+            page_path: `${location.pathname}${location.search}${location.hash}`
+        })
+    }, [location])
+
+    return null
+}
 
 function AppContent() {
     const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -51,6 +99,8 @@ function AppContent() {
 
             {/* Main Content */}
             <main className="flex-1">
+                <CanonicalRedirect />
+                <AnalyticsTracker />
                 <Routes>
                     <Route path="/" element={<OverviewPage isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />} />
                     <Route path="/portfolio/:fundCode" element={<PortfolioDetailPage isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />} />

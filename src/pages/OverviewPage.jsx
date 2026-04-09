@@ -29,7 +29,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-const OVERVIEW_POLL_MS = 5 * 60 * 1000
+const OVERVIEW_POLL_MS = 2 * 60 * 1000
 
 function SortableFundCard({ fund, isAdmin, navigate, handleDeleteFund, calculateFundReturn, getCurrentTime, rates, onReturnUpdate }) {
     const {

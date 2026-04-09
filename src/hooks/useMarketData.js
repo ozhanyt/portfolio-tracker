@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { fetchMarketData } from '@/services/marketDataService'
 
+const HIDDEN_POLL_MS = 5 * 60 * 1000
+
 /**
  * Hook to fetch market indicators at regular intervals
  * Shows loading only when no data exists, keeps old data during updates
@@ -8,30 +10,51 @@ import { fetchMarketData } from '@/services/marketDataService'
 export function useMarketData(intervalMs = 300000) {
   const [marketData, setMarketData] = useState([])
 
+  const getCurrentInterval = () => {
+    if (typeof document !== 'undefined' && document.hidden) {
+      return HIDDEN_POLL_MS
+    }
+    return intervalMs
+  }
+
   useEffect(() => {
+    let timeoutId = null
+    let cancelled = false
+
     const updateMarketData = async () => {
-      if (typeof document !== 'undefined' && document.hidden) {
-        return
+      try {
+        const data = await fetchMarketData()
+        if (!cancelled) {
+          console.log('Market Data Response:', data)
+          setMarketData(data)
+        }
+      } finally {
+        if (!cancelled) {
+          timeoutId = setTimeout(updateMarketData, getCurrentInterval())
+        }
+      }
+    }
+
+    const handleVisibilityChange = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
       }
 
-      const data = await fetchMarketData()
-      console.log('Market Data Response:', data)
-      setMarketData(data)
+      if (!document.hidden) {
+        updateMarketData()
+      } else {
+        timeoutId = setTimeout(updateMarketData, getCurrentInterval())
+      }
     }
 
     updateMarketData()
-    const interval = setInterval(updateMarketData, intervalMs)
-
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        updateMarketData()
-      }
-    }
-
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
-      clearInterval(interval)
+      cancelled = true
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [intervalMs])

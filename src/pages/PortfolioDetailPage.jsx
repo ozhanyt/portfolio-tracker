@@ -14,7 +14,7 @@ import { marketDebugData, getBist30Return } from '@/services/marketDataService'
 import { subscribeToFund, updateFundHoldings, updateFundMultiplier, updateFundTotals, updateFundPpfRate, updateFundPpfWeight, updateFundGyfRate, updateFundViopRate, updateFundViopWeight, updateFundViopLeverage, updateFundMadenWeight } from '../services/firestoreService'
 import { useAdmin } from '@/contexts/AdminContext'
 
-const DETAIL_POLL_MS = 5 * 60 * 1000
+const DETAIL_POLL_MS = 2 * 60 * 1000
 
 export function PortfolioDetailPage({ isDarkMode, setIsDarkMode }) {
   const { fundCode } = useParams()

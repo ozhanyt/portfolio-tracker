@@ -1,12 +1,14 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { fetchStockPrices, fetchExchangeRates, fetchFundHoldings } from '@/services/stockPriceService'
+
+const HIDDEN_POLL_MS = 5 * 60 * 1000
 
 /**
  * Hook to automatically update stock prices at regular intervals
  * @param {Array} portfolio - Current portfolio data
  * @param {Function} onUpdate - Callback function to update prices
  * @param {string} fundCode - Optional fund code. If provided, fetches data specific to that fund.
- * @param {number} intervalMs - Update interval in milliseconds (default: 300000 = 5 minutes)
+ * @param {number} intervalMs - Visible-tab refresh interval in milliseconds.
  */
 export function useStockPriceUpdates(portfolio, onUpdate, fundCode, intervalMs = 900000) {
     const [lastUpdate, setLastUpdate] = useState(null)
@@ -22,46 +24,66 @@ export function useStockPriceUpdates(portfolio, onUpdate, fundCode, intervalMs =
         GBP: { current: 48.00, prev: 48.00 },
         TRY: { current: 1, prev: 1 }
     })
-    const updateTimeoutRef = useRef(null)
-    // Create a key that changes only when codes or isManual/isForeign flags change
+
     const portfolioKey = portfolio.map(p => `${p.code}-${p.isManual}-${p.isForeign}`).join('|')
 
-    // Fetch Rates on mount and periodically
-    useEffect(() => {
-        const fetchRates = async () => {
-            if (typeof document !== 'undefined' && document.hidden) {
-                return
-            }
-            const exchangeRates = await fetchExchangeRates()
-            setRates(exchangeRates)
+    const getCurrentInterval = () => {
+        if (typeof document !== 'undefined' && document.hidden) {
+            return HIDDEN_POLL_MS
         }
-        fetchRates()
-        // Fetch rates every 5 minutes
-        const rateInterval = setInterval(fetchRates, 300000)
-        const handleVisibilityChange = () => {
-            if (!document.hidden) {
-                fetchRates()
+        return intervalMs
+    }
+
+    useEffect(() => {
+        let timeoutId = null
+        let cancelled = false
+
+        const fetchRates = async () => {
+            try {
+                const exchangeRates = await fetchExchangeRates()
+                if (!cancelled) {
+                    setRates(exchangeRates)
+                }
+            } finally {
+                if (!cancelled) {
+                    timeoutId = setTimeout(fetchRates, getCurrentInterval())
+                }
             }
         }
 
+        const handleVisibilityChange = () => {
+            if (timeoutId) {
+                clearTimeout(timeoutId)
+            }
+
+            if (!document.hidden) {
+                fetchRates()
+            } else {
+                timeoutId = setTimeout(fetchRates, getCurrentInterval())
+            }
+        }
+
+        fetchRates()
         document.addEventListener('visibilitychange', handleVisibilityChange)
 
         return () => {
-            clearInterval(rateInterval)
+            cancelled = true
+            if (timeoutId) {
+                clearTimeout(timeoutId)
+            }
             document.removeEventListener('visibilitychange', handleVisibilityChange)
         }
-    }, [])
+    }, [intervalMs])
 
     useEffect(() => {
         if (!portfolio || portfolio.length === 0) {
             return
         }
 
-        const updatePrices = async () => {
-            if (typeof document !== 'undefined' && document.hidden) {
-                return
-            }
+        let timeoutId = null
+        let cancelled = false
 
+        const updatePrices = async () => {
             setIsUpdating(true)
             setError(null)
 
@@ -69,16 +91,11 @@ export function useStockPriceUpdates(portfolio, onUpdate, fundCode, intervalMs =
                 let allPrices = []
                 let hasSymbolsToFetch = false
 
-                // STRATEGY 1: If fundCode is provided, fetch ALL holdings for that fund
                 if (fundCode) {
-                    // console.log(`📡 Fetching price updates via fetchFundHoldings for ${fundCode}`)
                     const fundHoldings = await fetchFundHoldings(fundCode)
                     allPrices = fundHoldings
                     hasSymbolsToFetch = true
-                }
-                // STRATEGY 2: If no fundCode (e.g. Overview page), fetch by symbols
-                else {
-                    // Separate local and foreign stocks
+                } else {
                     const localSymbols = [...new Set(portfolio
                         .filter(item => !item.isManual && !item.isForeign)
                         .map(item => item.code)
@@ -91,13 +108,11 @@ export function useStockPriceUpdates(portfolio, onUpdate, fundCode, intervalMs =
 
                     hasSymbolsToFetch = localSymbols.length > 0 || foreignSymbols.length > 0
 
-                    // Fetch local stocks
                     if (localSymbols.length > 0) {
                         const localPrices = await fetchStockPrices(localSymbols)
                         allPrices = [...allPrices, ...localPrices]
                     }
 
-                    // Fetch foreign stocks
                     if (foreignSymbols.length > 0) {
                         const foreignPrices = await fetchStockPrices(foreignSymbols, { isForeign: true })
                         allPrices = [...allPrices, ...foreignPrices]
@@ -108,35 +123,42 @@ export function useStockPriceUpdates(portfolio, onUpdate, fundCode, intervalMs =
                     onUpdate(allPrices)
                     setLastUpdate(new Date())
                 } else if (hasSymbolsToFetch) {
-                    setError('Fiyat güncellenemedi')
+                    setError('Fiyat guncellenemedi')
                 }
             } catch (err) {
                 console.error('Price update error:', err)
                 setError(err.message)
             } finally {
                 setIsUpdating(false)
+                if (!cancelled) {
+                    timeoutId = setTimeout(updatePrices, getCurrentInterval())
+                }
             }
         }
 
-        // Initial update - IMMEDIATE
-        updatePrices()
-
-        // Set up interval for periodic updates
-        const interval = setInterval(updatePrices, intervalMs)
         const handleVisibilityChange = () => {
+            if (timeoutId) {
+                clearTimeout(timeoutId)
+            }
+
             if (!document.hidden) {
                 updatePrices()
+            } else {
+                timeoutId = setTimeout(updatePrices, getCurrentInterval())
             }
         }
 
+        updatePrices()
         document.addEventListener('visibilitychange', handleVisibilityChange)
 
-        // Cleanup
         return () => {
-            clearInterval(interval)
+            cancelled = true
+            if (timeoutId) {
+                clearTimeout(timeoutId)
+            }
             document.removeEventListener('visibilitychange', handleVisibilityChange)
         }
-    }, [portfolioKey, intervalMs]) // Re-run only if portfolio or interval changes
+    }, [portfolioKey, intervalMs, fundCode])
 
     return {
         lastUpdate,

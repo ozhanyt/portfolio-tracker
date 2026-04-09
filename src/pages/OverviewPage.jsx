@@ -549,6 +549,40 @@ export function OverviewPage({ isDarkMode, setIsDarkMode }) {
                     </div>
                 )}
 
+                <div className="grid gap-4 lg:grid-cols-2">
+                    <Card className="border-border/80 bg-card/60">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-lg sm:text-xl">Nasıl Okunur?</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3 text-sm leading-7 text-muted-foreground">
+                            <p>
+                                Günlük getiri alanı, ilgili fonun gün içindeki değişimini özetler. Portföy değeri ve kar/zarar alanları ise
+                                hesaplanan toplam görünümü yansıtır.
+                            </p>
+                            <p>
+                                Fon detay sayfasında içerik dağılımını, öne çıkan hisseleri ve güncel hesaplamaları daha ayrıntılı şekilde
+                                inceleyebilirsiniz.
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-border/80 bg-card/60">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-lg sm:text-xl">Bilgilendirme</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3 text-sm leading-7 text-muted-foreground">
+                            <p>
+                                Veriler belirli aralıklarla güncellenir. Piyasa ve fon içeriklerinde kaynak sistemlere bağlı gecikmeler
+                                oluşabilir.
+                            </p>
+                            <p>
+                                Bu görünüm yalnızca bilgilendirme amaçlıdır. Sitede yer alan içerikler, veriler ve hesaplamalar yatırım
+                                tavsiyesi niteliği taşımaz.
+                            </p>
+                        </CardContent>
+                    </Card>
+                </div>
+
                 <AddFundDialog
                     isOpen={isAddFundOpen}
                     onClose={() => setIsAddFundOpen(false)}

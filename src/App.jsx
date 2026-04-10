@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom'
 import { logEvent } from 'firebase/analytics'
 import { Lock, AlertTriangle } from 'lucide-react'
@@ -12,6 +12,7 @@ import { ReportDetailPage } from './pages/ReportDetailPage'
 import { AdminProvider, useAdmin } from './contexts/AdminContext'
 import { AdminLoginDialog } from './components/AdminLoginDialog'
 import { XIcon } from './components/icons/XIcon'
+import { SeoManager } from './components/SeoManager'
 import { analytics } from './firebase'
 
 const PRIMARY_HOST = 'fontahmin.com.tr'
@@ -38,35 +39,107 @@ function CanonicalRedirect() {
   return null
 }
 
-function getPageTitle(pathname) {
-  if (pathname.startsWith('/portfolio/')) return 'Fon Detayı | fontahmin.com.tr'
-  if (pathname === '/hakkinda') return 'Hakkında | fontahmin.com.tr'
-  if (pathname === '/gizlilik-politikasi') return 'Gizlilik Politikası | fontahmin.com.tr'
-  if (pathname === '/iletisim') return 'İletişim | fontahmin.com.tr'
-  if (pathname === '/raporlar/haftalik') return 'Haftalık Raporlar | fontahmin.com.tr'
-  if (pathname === '/raporlar/aylik') return 'Aylık Raporlar | fontahmin.com.tr'
-  if (/^\/raporlar\/[^/]+\/[^/]+\/[^/]+$/.test(pathname)) return 'Rapor Detayı | fontahmin.com.tr'
-  if (pathname.startsWith('/raporlar/')) return 'Günlük Raporlar | fontahmin.com.tr'
-  return 'fontahmin.com.tr | Günlük fon görünümü'
+function getSeoMeta(pathname) {
+  if (pathname.startsWith('/portfolio/')) {
+    return {
+      title: 'Fon Detayı | fontahmin.com.tr',
+      description: 'Seçili fon için günlük getiri, portföy değeri, kar zarar ve içerik görünümünü fontahmin.com.tr üzerinde takip edin.',
+      canonicalPath: pathname,
+      type: 'article',
+    }
+  }
+
+  if (pathname === '/hakkinda') {
+    return {
+      title: 'Hakkında | fontahmin.com.tr',
+      description: 'fontahmin.com.tr üzerinde yer alan fon görünümü, veri akışı ve kullanım amacı hakkında kısa bilgiler.',
+      canonicalPath: pathname,
+    }
+  }
+
+  if (pathname === '/gizlilik-politikasi') {
+    return {
+      title: 'Gizlilik Politikası | fontahmin.com.tr',
+      description: 'fontahmin.com.tr üzerinde kullanılan temel analiz ve kullanım verileri hakkında bilgilendirme.',
+      canonicalPath: pathname,
+    }
+  }
+
+  if (pathname === '/iletisim') {
+    return {
+      title: 'İletişim | fontahmin.com.tr',
+      description: 'fontahmin.com.tr için görüş, öneri ve teknik bildirim kanallarına bu sayfadan ulaşabilirsiniz.',
+      canonicalPath: pathname,
+    }
+  }
+
+  if (pathname === '/raporlar/haftalik') {
+    return {
+      title: 'Haftalık Raporlar | fontahmin.com.tr',
+      description: 'Takipteki fonlar için haftalık para girişi çıkışı, fon dağılım raporu ve TEFAS özeti arşivi.',
+      canonicalPath: pathname,
+      type: 'article',
+    }
+  }
+
+  if (pathname === '/raporlar/aylik') {
+    return {
+      title: 'Aylık Raporlar | fontahmin.com.tr',
+      description: 'Takipteki fonlar için aylık para akışı, fon dağılım görünümü ve dönemsel TEFAS özetleri.',
+      canonicalPath: pathname,
+      type: 'article',
+    }
+  }
+
+  if (/^\/raporlar\/[^/]+\/[^/]+\/[^/]+$/.test(pathname)) {
+    return {
+      title: 'Rapor Detayı | fontahmin.com.tr',
+      description: 'Seçili dönem ve rapor tipi için görsel rapor detaylarını fontahmin.com.tr üzerinde inceleyin.',
+      canonicalPath: pathname,
+      type: 'article',
+    }
+  }
+
+  if (pathname.startsWith('/raporlar/')) {
+    return {
+      title: 'Günlük Raporlar | fontahmin.com.tr',
+      description: 'Takipteki fonlar için günlük para girişi çıkışı, fon dağılım raporu ve TEFAS özeti arşivi.',
+      canonicalPath: pathname,
+      type: 'article',
+    }
+  }
+
+  return {
+    title: 'fontahmin.com.tr | Günlük Fon Görünümü',
+    description: 'Takipteki fonlar için günlük görünüm, fon detayları, TEFAS özetleri ve dönemsel raporlar tek yerde.',
+    canonicalPath: '/',
+    type: 'website',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'fontahmin.com.tr',
+      url: 'https://fontahmin.com.tr/',
+      description: 'Takipteki fonlar için günlük görünüm, fon detayları, TEFAS özetleri ve dönemsel raporlar tek yerde.',
+      inLanguage: 'tr-TR',
+    },
+  }
 }
 
 function AnalyticsTracker() {
   const location = useLocation()
+  const seoMeta = useMemo(() => getSeoMeta(location.pathname), [location.pathname])
 
   useEffect(() => {
-    const pageTitle = getPageTitle(location.pathname)
-    document.title = pageTitle
-
     if (!analytics || typeof window === 'undefined') return
 
     logEvent(analytics, 'page_view', {
-      page_title: pageTitle,
+      page_title: seoMeta.title,
       page_location: window.location.href,
       page_path: `${location.pathname}${location.search}${location.hash}`,
     })
-  }, [location])
+  }, [location, seoMeta])
 
-  return null
+  return <SeoManager {...seoMeta} />
 }
 
 function AppContent() {

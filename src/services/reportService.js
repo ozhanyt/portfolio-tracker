@@ -1,8 +1,7 @@
-import { db, storage } from '@/firebase'
+import { db } from '@/firebase'
 import {
   collection,
   doc,
-  getDocs,
   onSnapshot,
   orderBy,
   query,
@@ -10,17 +9,8 @@ import {
   setDoc,
   deleteDoc,
 } from 'firebase/firestore'
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 
 const REPORTS_COLLECTION = 'reports'
-
-function slugifyFileName(name) {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9.-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-}
 
 export function subscribeToReports(callback) {
   const q = query(collection(db, REPORTS_COLLECTION), orderBy('dateKey', 'desc'))
@@ -43,23 +33,29 @@ export async function addReport({ period, reportType, title, summary, dateKey, f
     year: 'numeric',
   })
 
-  const uploadedImages = []
+  const formData = new FormData()
+  formData.append('period', period)
+  formData.append('reportType', reportType)
+  formData.append('reportId', reportRef.id)
 
-  for (let index = 0; index < files.length; index += 1) {
-    const file = files[index]
-    const storageRef = ref(
-      storage,
-      `reports/${period}/${reportType}/${reportRef.id}/${String(index + 1).padStart(2, '0')}-${slugifyFileName(file.name)}`
-    )
+  files.forEach((file) => {
+    formData.append('images[]', file)
+  })
 
-    await uploadBytes(storageRef, file)
-    const downloadUrl = await getDownloadURL(storageRef)
+  const uploadResponse = await fetch('/api/report-upload.php', {
+    method: 'POST',
+    body: formData,
+  })
 
-    uploadedImages.push({
-      src: downloadUrl,
-      alt: `${title || reportType} görsel ${index + 1}`,
-      name: file.name,
-    })
+  if (!uploadResponse.ok) {
+    throw new Error('Rapor görselleri yüklenemedi.')
+  }
+
+  const uploadPayload = await uploadResponse.json()
+  const uploadedImages = Array.isArray(uploadPayload.images) ? uploadPayload.images : []
+
+  if (!uploadedImages.length) {
+    throw new Error('Yüklenen görseller için çıktı alınamadı.')
   }
 
   await setDoc(reportRef, {

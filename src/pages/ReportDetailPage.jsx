@@ -53,11 +53,11 @@ export function ReportDetailPage() {
         <div className="space-y-4">
           {(report.images || []).map((image, index) => (
             <Card key={`${report.id}-${index}`} className="overflow-hidden border-border/80 bg-card/70">
-              <CardContent className="p-0">
+              <CardContent className="bg-muted/10 p-3 sm:p-4">
                 <img
                   src={image.src}
                   alt={image.alt || `${report.title || typeMeta.title} görsel ${index + 1}`}
-                  className="block w-full"
+                  className="mx-auto block h-auto max-h-[70vh] max-w-full rounded-md object-contain sm:max-h-[80vh]"
                   loading="lazy"
                 />
               </CardContent>

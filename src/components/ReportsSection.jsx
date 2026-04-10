@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { REPORT_PERIODS, REPORT_TYPES, REPORT_TYPE_ORDER } from '@/data/reportCatalog'
+import { REPORT_PERIODS } from '@/data/reportCatalog'
 
 export function ReportsSection() {
   return (
@@ -8,8 +8,7 @@ export function ReportsSection() {
       <div className="space-y-2">
         <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Raporlar</h2>
         <p className="max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base">
-          Günlük, haftalık ve aylık rapor akışı için ayrı alanlar hazır. Her dönemde aynı üç başlık altında düzenli
-          rapor görselleri yayınlanacak.
+          Günlük, haftalık ve aylık rapor arşivlerine bu alandan hızlıca ulaşabilirsiniz.
         </p>
       </div>
 
@@ -23,13 +22,7 @@ export function ReportsSection() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm leading-7 text-muted-foreground">{period.description}</p>
-                <ul className="space-y-2 text-sm text-foreground">
-                  {REPORT_TYPE_ORDER.map((reportType) => (
-                    <li key={reportType} className="rounded-md border border-border/70 bg-muted/20 px-3 py-2">
-                      {REPORT_TYPES[reportType].title}
-                    </li>
-                  ))}
-                </ul>
+                <p className="text-sm font-medium text-primary">Raporları görüntüle</p>
               </CardContent>
             </Card>
           </Link>

@@ -2,17 +2,17 @@ export const REPORT_PERIODS = {
   gunluk: {
     title: 'Günlük',
     pageTitle: 'Günlük Raporlar',
-    description: 'Takipteki fonlar için günlük para hareketleri, dağılım görünümü ve TEFAS özetleri burada yer alacak.',
+    description: 'Takipteki fonlar için günlük para girişi çıkışı, fon dağılım raporu ve TEFAS özetlerini burada bulabilirsiniz.',
   },
   haftalik: {
     title: 'Haftalık',
     pageTitle: 'Haftalık Raporlar',
-    description: 'Hafta genelindeki yönü, öne çıkan değişimleri ve haftalık TEFAS görünümünü bu alanda takip edebilirsiniz.',
+    description: 'Hafta genelindeki para akışı, fon dağılımı ve haftalık TEFAS özetlerini bu alanda takip edebilirsiniz.',
   },
   aylik: {
     title: 'Aylık',
     pageTitle: 'Aylık Raporlar',
-    description: 'Aylık perspektifte para akışı, fon dağılımı ve dönemsel TEFAS özeti tek yerde toplanacak.',
+    description: 'Aylık perspektifte para akışı, fon dağılımı ve dönemsel TEFAS özetlerini tek yerde inceleyebilirsiniz.',
   },
 }
 
